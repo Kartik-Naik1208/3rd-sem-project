@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}IngredientIQ - Know What's Inside Your Food{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section text-white py-5 position-relative overflow-hidden">
+    <div class="container py-lg-5">
+        <div class="row align-items-center gy-5">
+            <div class="col-lg-7">
+                <span class="badge bg-success bg-opacity-25 text-success-light border border-success px-3 py-2 rounded-pill fw-semibold mb-3">
+                    <i class="bi bi-shield-check me-1"></i> Food & Additive Safety Scanner
+                </span>
+                <h1 class="display-4 fw-extrabold lh-tight mb-3">
+                    Know What's Inside <span class="text-gradient">Your Food</span>
+                </h1>
+                <p class="lead text-light text-opacity-75 mb-4">
+                    Scan food labels, understand ingredient safety, and check potential conflicts with your allergies and dietary preferences.
+                </p>
+                <div class="d-flex flex-wrap gap-3">
+                    <a href="{{ url_for('main.scan') }}" class="btn btn-success btn-lg px-4 py-3 fw-bold shadow-sm d-flex align-items-center gap-2">
+                        <i class="bi bi-camera-fill"></i> Scan Ingredients
+                    </a>
+                    <a href="{{ url_for('main.search') }}" class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold d-flex align-items-center gap-2">
+                        <i class="bi bi-search"></i> Search Ingredients
+                    </a>
+                </div>
+            </div>
+
+            <!-- Hero Interactive Preview Card -->
+            <div class="col-lg-5">
+                <div class="card bg-dark text-white border-secondary shadow-lg rounded-4 p-4 position-relative">
+                    <div class="d-flex align-items-center justify-content-between mb-3 border-bottom border-secondary pb-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success rounded-circle p-2">
+                                <i class="bi bi-shield-check fs-6"></i>
+                            </span>
+                            <span class="fw-bold">Example Label Scan</span>
+                        </div>
+                        <span class="badge bg-success fw-bold">Clean & Safe</span>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-secondary d-block mb-1">Ingredient List:</small>
+                        <div class="bg-black bg-opacity-50 p-2 rounded small font-monospace text-muted border border-secondary">
+                            "Wheat flour, sugar, palm oil, salt, citric acid (E330)..."
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-secondary d-block mb-2">Allergy & Diet Highlights:</small>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-danger bg-opacity-25 text-danger border border-danger">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Gluten (Wheat)
+                            </span>
+                            <span class="badge bg-success bg-opacity-25 text-success border border-success">
+                                <i class="bi bi-check-circle me-1"></i> Vegan-Compatible
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <small class="text-secondary d-block mb-2">Additive Safety Ratings:</small>
+                        <div class="list-group list-group-flush bg-transparent small">
+                            <div class="list-group-item bg-transparent text-light px-0 py-1 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-check-circle-fill text-success me-1"></i> Citric Acid (E330)</span>
+                                <span class="badge bg-success">Safe</span>
+                            </div>
+                            <div class="list-group-item bg-transparent text-light px-0 py-1 d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-check-circle-fill text-success me-1"></i> Salt</span>
+                                <span class="badge bg-success">Safe</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-top border-secondary text-center">
+                        <a href="{{ url_for('main.scan') }}" class="btn btn-sm btn-outline-success w-100 fw-semibold">
+                            Try It With Your Own Label &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3-Step Process Section -->
+<section class="py-5 bg-white border-bottom">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <h6 class="text-success fw-bold text-uppercase tracking-wider">How It Works</h6>
+            <h2 class="fw-bold">Simple 3-Step Scanning Process</h2>
+            <p class="text-secondary">Easily decode what goes into your meals and snacks in a few simple clicks.</p>
+        </div>
+
+        <div class="row g-4 text-center">
+            <!-- Step 1: Upload -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 feature-card">
+                    <div class="feature-icon bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-cloud-arrow-up fs-2"></i>
+                    </div>
+                    <div class="step-badge mb-2">
+                        <span class="badge bg-light text-success border border-success fw-bold px-3 py-1">Step 1</span>
+                    </div>
+                    <h5 class="fw-bold">Step 1: Upload</h5>
+                    <p class="text-secondary mb-0">
+                        Upload a food label image or enter the ingredient text.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 2: Scan -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 feature-card">
+                    <div class="feature-icon bg-primary bg-opacity-10 text-primary rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-search fs-2"></i>
+                    </div>
+                    <div class="step-badge mb-2">
+                        <span class="badge bg-light text-primary border border-primary fw-bold px-3 py-1">Step 2</span>
+                    </div>
+                    <h5 class="fw-bold">Step 2: Scan</h5>
+                    <p class="text-secondary mb-0">
+                        Extract ingredients and compare them with the ingredient database.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step 3: Understand -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4 feature-card">
+                    <div class="feature-icon bg-info bg-opacity-10 text-info rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center">
+                        <i class="bi bi-shield-check fs-2"></i>
+                    </div>
+                    <div class="step-badge mb-2">
+                        <span class="badge bg-light text-info border border-info fw-bold px-3 py-1">Step 3</span>
+                    </div>
+                    <h5 class="fw-bold">Step 3: Understand</h5>
+                    <p class="text-secondary mb-0">
+                        Review ingredient details, safety information, and potential allergy or diet conflicts.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Additional Helpful Features -->
+<section class="py-5 bg-light">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <h6 class="text-success fw-bold text-uppercase tracking-wider">Features</h6>
+            <h2 class="fw-bold">Designed for Clear, Actionable Information</h2>
+            <p class="text-secondary">Everything you need to verify packaged food transparency.</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4">
+                    <i class="bi bi-heart-pulse text-danger fs-2 mb-3 d-block"></i>
+                    <h5 class="fw-bold">Allergy & Diet Checking</h5>
+                    <p class="text-secondary small mb-0">
+                        Select from 9 recognized allergen categories and vegetarian or vegan diets to catch conflicts before you consume.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4">
+                    <i class="bi bi-tag text-warning fs-2 mb-3 d-block"></i>
+                    <h5 class="fw-bold">E-Number & Additive Catalog</h5>
+                    <p class="text-secondary small mb-0">
+                        Identifies emulsifiers, artificial colorings, preservatives, and sweeteners with regulatory and safety classifications.
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 p-4">
+                    <i class="bi bi-clock-history text-success fs-2 mb-3 d-block"></i>
+                    <h5 class="fw-bold">Scan History & Export</h5>
+                    <p class="text-secondary small mb-0">
+                        Save past scans in your local history to review anytime, or export formatted PDF safety reports.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action Section -->
+<section class="py-5 bg-success text-white text-center">
+    <div class="container py-4">
+        <h2 class="fw-bold mb-3">Ready to Understand Your Food Labels?</h2>
+        <p class="lead text-white-75 mb-4 max-w-600 mx-auto">
+            Upload an image of an ingredient panel or paste ingredients text to see an immediate breakdown.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('main.scan') }}" class="btn btn-light btn-lg px-4 py-3 fw-bold text-success shadow">
+                <i class="bi bi-camera-fill me-1"></i> Scan Ingredients Now
+            </a>
+            <a href="{{ url_for('main.search') }}" class="btn btn-outline-light btn-lg px-4 py-3 fw-semibold">
+                <i class="bi bi-search me-1"></i> Search Database
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

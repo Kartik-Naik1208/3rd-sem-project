@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Login - IngredientIQ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5">
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-success bg-opacity-10 text-success mb-2">
+                        <i class="bi bi-person-circle fs-2"></i>
+                    </div>
+                    <h3 class="fw-bold mb-1">Welcome Back</h3>
+                    <p class="text-secondary small">Log in to view your scan history and personalized allergen alerts.</p>
+                </div>
+
+                <form method="POST" action="{{ url_for('auth.login') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label fw-semibold">Username or Email</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-secondary"></i></span>
+                            <input type="text" class="form-control border-start-0" id="username" name="username" placeholder="Enter username or email" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-secondary"></i></span>
+                            <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i>Log In
+                    </button>
+                </form>
+
+                <div class="text-center mt-4 pt-3 border-top small text-secondary">
+                    Don't have an account yet? <a href="{{ url_for('auth.register') }}" class="text-success fw-semibold text-decoration-none">Sign up</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

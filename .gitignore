@@ -1,0 +1,93 @@
+# ==========================================
+# Python Bytecode and Compilation Artifacts
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Environment Variables & Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# SQLite Database & Instance Runtime Data
+# ==========================================
+# instance/ contains runtime database files (e.g. ingredientiq.db) which hold
+# user accounts, hashed passwords, personal scan history, and generated logs.
+# The catalog dataset is seeded reproducibly from data/ingredients.csv.
+instance/
+*.db
+*.sqlite
+*.sqlite3
+
+# ==========================================
+# User Uploads & Media
+# ==========================================
+# Preserves upload directory via .gitkeep while ignoring uploaded user label images
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# ==========================================
+# Testing, Coverage & Type Checking
+# ==========================================
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ==========================================
+# Logs & Diagnostic Files
+# ==========================================
+*.log
+scratch/
+
+# ==========================================
+# Distribution, Packaging & Build Artifacts
+# ==========================================
+build/
+dist/
+*.egg-info/
+*.egg
+eggs/
+.eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+downloads/
+
+# ==========================================
+# IDEs, Editors & OS Files
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+
+# ==========================================
+# Jupyter & Interactive Notebooks
+# ==========================================
+.ipynb_checkpoints/

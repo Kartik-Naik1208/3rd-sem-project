@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - IngredientIQ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-gear me-2 text-success"></i>Admin Dashboard</h2>
+            <p class="text-secondary mb-0">System health, database metrics, and application status.</p>
+        </div>
+        <span class="badge bg-success bg-opacity-25 text-success border border-success px-3 py-2 fw-semibold">
+            <i class="bi bi-check-circle me-1"></i>System Online
+        </span>
+    </div>
+
+    <!-- Metrics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase">Cataloged Ingredients</div>
+                        <h2 class="fw-bold mb-0 mt-1">{{ total_ingredients }}</h2>
+                    </div>
+                    <div class="bg-success bg-opacity-10 text-success p-3 rounded-circle">
+                        <i class="bi bi-database fs-3"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-3">
+                    <i class="bi bi-info-circle me-1"></i>Additives, E-numbers & allergens
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase">Total Processed Scans</div>
+                        <h2 class="fw-bold mb-0 mt-1">{{ total_scans }}</h2>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 text-primary p-3 rounded-circle">
+                        <i class="bi bi-camera fs-3"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-3">
+                    <i class="bi bi-clock-history me-1"></i>OCR + manual ingredient checks
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-secondary small fw-semibold text-uppercase">Registered Users</div>
+                        <h2 class="fw-bold mb-0 mt-1">{{ total_users }}</h2>
+                    </div>
+                    <div class="bg-info bg-opacity-10 text-info p-3 rounded-circle">
+                        <i class="bi bi-people fs-3"></i>
+                    </div>
+                </div>
+                <div class="small text-muted mt-3">
+                    <i class="bi bi-shield-lock me-1"></i>Managed via Flask-Login
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Health & Architecture -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-hdd-network me-2 text-success"></i>Subsystem Status</h5>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                        <div>
+                            <strong class="d-block">Database Engine</strong>
+                            <small class="text-secondary">Flask-SQLAlchemy ORM</small>
+                        </div>
+                        <span class="badge bg-success">{{ system_status.database }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                        <div>
+                            <strong class="d-block">OCR & Preprocessing</strong>
+                            <small class="text-secondary">OpenCV 4 + Pytesseract</small>
+                        </div>
+                        <span class="badge bg-info text-dark">{{ system_status.ocr_engine }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                        <div>
+                            <strong class="d-block">Fuzzy Matching Engine</strong>
+                            <small class="text-secondary">RapidFuzz Levenshtein & Weighted Ratio</small>
+                        </div>
+                        <span class="badge bg-success">{{ system_status.fuzzy_matcher }}</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
+                        <div>
+                            <strong class="d-block">PDF Report Generator</strong>
+                            <small class="text-secondary">ReportLab Document Template</small>
+                        </div>
+                        <span class="badge bg-success">{{ system_status.pdf_reporter }}</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold mb-3"><i class="bi bi-folder2-open me-2 text-success"></i>Application Factory Architecture</h5>
+                <p class="text-secondary small">
+                    IngredientIQ is structured cleanly using Flask's application factory design pattern:
+                </p>
+                <div class="font-monospace small bg-light p-3 rounded border">
+                    <div>&bull; <strong>app/__init__.py</strong>: create_app() factory</div>
+                    <div>&bull; <strong>app/routes/</strong>: Modular Blueprints (main, auth)</div>
+                    <div>&bull; <strong>app/models/</strong>: SQLAlchemy DB Models (User, Ingredient, ScanRecord)</div>
+                    <div>&bull; <strong>app/services/</strong>: OCR, RapidFuzz Analyzer, ReportLab PDF</div>
+                    <div>&bull; <strong>app/templates/</strong>: Jinja2 + Bootstrap 5 responsive templates</div>
+                    <div>&bull; <strong>app/static/</strong>: CSS, JS & secure uploads</div>
+                    <div>&bull; <strong>data/</strong>: Seed ingredient datasets</div>
+                    <div>&bull; <strong>tests/</strong>: Automated Pytest test suite</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+[
+  {
+    "name": "Water",
+    "e_number": null,
+    "category": "Solvent",
+    "safety_rating": "Safe",
+    "allergen_type": null,
+    "description": "Purified standard drinking water.",
+    "health_effects": "Essential for hydration."
+  },
+  {
+    "name": "Wheat Flour",
+    "e_number": null,
+    "category": "Grain",
+    "safety_rating": "Safe",
+    "allergen_type": "Gluten",
+    "description": "Finely ground wheat kernel flour commonly used in baking.",
+    "health_effects": "Can trigger celiac disease or gluten sensitivity symptoms."
+  },
+  {
+    "name": "Skim Milk Powder",
+    "e_number": null,
+    "category": "Dairy",
+    "safety_rating": "Safe",
+    "allergen_type": "Dairy",
+    "description": "Dehydrated non-fat cow milk.",
+    "health_effects": "Contains lactose; not suitable for dairy-allergic or lactose-intolerant individuals."
+  },
+  {
+    "name": "Soy Lecithin",
+    "e_number": "E322",
+    "category": "Emulsifier",
+    "safety_rating": "Safe",
+    "allergen_type": "Soy",
+    "description": "Natural phospholipid emulsifier extracted from soybeans.",
+    "health_effects": "Generally safe, but may cause allergic reaction in people with severe soy allergy."
+  },
+  {
+    "name": "Tartrazine",
+    "e_number": "E102",
+    "category": "Food Coloring",
+    "safety_rating": "Caution",
+    "allergen_type": null,
+    "description": "Synthetic lemon yellow azo dye used in foods and beverages.",
+    "health_effects": "May cause hyperactivity in sensitive children; can trigger hives or asthma in aspirin-sensitive people."
+  },
+  {
+    "name": "Sodium Benzoate",
+    "e_number": "E211",
+    "category": "Preservative",
+    "safety_rating": "Caution",
+    "allergen_type": null,
+    "description": "Antimicrobial food preservative commonly used in acidic foods and carbonated drinks.",
+    "health_effects": "When combined with ascorbic acid (Vitamin C), it can form trace amounts of benzene (a carcinogen)."
+  },
+  {
+    "name": "Sodium Nitrite",
+    "e_number": "E250",
+    "category": "Preservative",
+    "safety_rating": "Avoid",
+    "allergen_type": null,
+    "description": "Inorganic compound used to cure meats and prevent botulism.",
+    "health_effects": "Linked to formation of carcinogenic nitrosamines during high-temperature cooking."
+  },
+  {
+    "name": "Citric Acid",
+    "e_number": "E330",
+    "category": "Acidity Regulator",
+    "safety_rating": "Safe",
+    "allergen_type": null,
+    "description": "Naturally occurring weak organic acid found in citrus fruits.",
+    "health_effects": "Harmless in food amounts; protects against spoilage."
+  },
+  {
+    "name": "Monosodium Glutamate",
+    "e_number": "E621",
+    "category": "Flavor Enhancer",
+    "safety_rating": "Safe",
+    "allergen_type": null,
+    "description": "Sodium salt of glutamic acid used to impart umami taste.",
+    "health_effects": "Widely recognized as safe by WHO and FDA; mild transient sensitivities reported in rare cases."
+  },
+  {
+    "name": "Aspartame",
+    "e_number": "E951",
+    "category": "Artificial Sweetener",
+    "safety_rating": "Caution",
+    "allergen_type": null,
+    "description": "Low-calorie artificial sweetener used in diet beverages.",
+    "health_effects": "Individuals with phenylketonuria (PKU) must strictly avoid it due to phenylalanine content."
+  },
+  {
+    "name": "Peanut Oil",
+    "e_number": null,
+    "category": "Oil",
+    "safety_rating": "Caution",
+    "allergen_type": "Peanuts",
+    "description": "Vegetable oil derived from peanuts.",
+    "health_effects": "Cold-pressed or unrefined peanut oil contains peanut proteins and can provoke severe anaphylaxis."
+  },
+  {
+    "name": "Ascorbic Acid",
+    "e_number": "E300",
+    "category": "Antioxidant",
+    "safety_rating": "Safe",
+    "allergen_type": null,
+    "description": "Vitamin C; antioxidant that prevents food discoloration and rancidity.",
+    "health_effects": "Essential dietary vitamin."
+  }
+]

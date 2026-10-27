@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Label - Food Ingredient Safety Scanner{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Page Header -->
+            <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+                <div>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-camera me-2 text-success"></i>Scan Ingredient Label</h2>
+                    <p class="text-secondary mb-0">Upload a label photo or paste ingredient text to check safety, additives, and dietary conflicts.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-clock-history me-1"></i>History
+                    </a>
+                    <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-search me-1"></i>Search Ingredients
+                    </a>
+                </div>
+            </div>
+
+            <!-- Upload / Input Form Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <form action="{{ url_for('main.scan') }}" method="POST" enctype="multipart/form-data" id="scanForm">
+                    <div class="mb-3">
+                        <label for="product_name" class="form-label fw-semibold">Product Name <span class="text-muted fw-normal small">(Optional)</span></label>
+                        <input type="text" class="form-control form-control-lg" id="product_name" name="product_name" 
+                               value="{{ product_name if product_name != 'Sample Product' else '' }}" placeholder="e.g. Oat Milk Cookies, Energy Snack...">
+                    </div>
+
+                    <div class="row g-4 mb-3">
+                        <!-- Option 1: File Upload -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold"><i class="bi bi-image me-1 text-primary"></i>Upload Label Image</label>
+                            <div class="drop-zone p-4 text-center rounded-3 border-2 border-dashed" id="dropZone">
+                                <i class="bi bi-cloud-arrow-up display-5 text-secondary d-block mb-2"></i>
+                                <div class="fw-semibold small">Drag & Drop image here or <span class="text-success text-decoration-underline" style="cursor: pointer;">browse</span></div>
+                                <span class="text-muted small">PNG, JPG, JPEG, WEBP up to 16MB</span>
+                                <input type="file" name="label_image" id="labelImageInput" class="d-none" accept="image/*">
+                                <div id="previewContainer" class="mt-2 d-none">
+                                    <img id="imagePreview" src="#" alt="Preview" class="img-fluid rounded border shadow-sm max-h-150">
+                                    <div class="small text-success mt-1 fw-semibold" id="fileName"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Option 2: Direct Text Input -->
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <label for="raw_text" class="form-label fw-semibold mb-0"><i class="bi bi-textarea-t me-1 text-success"></i>Or Paste Ingredient Text</label>
+                                <button type="button" class="btn btn-link btn-sm text-decoration-none p-0" id="fillSampleBtn">
+                                    <i class="bi bi-magic me-1"></i>Load Sample Text
+                                </button>
+                            </div>
+                            <textarea class="form-control" id="raw_text" name="raw_text" rows="5" 
+                                      placeholder="Paste ingredients list here... e.g. Wheat flour, sugar, palm oil, salt, citric acid (E330), sodium benzoate (E211)...">{{ extracted_text }}</textarea>
+                            <small class="text-secondary">Separate ingredients by commas or semicolons.</small>
+                        </div>
+                    </div>
+
+                    <!-- Client-side Validation Alert (hidden by default) -->
+                    <div id="validationAlert" class="alert alert-warning d-none align-items-center gap-2 rounded-3 mb-3" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                        <span>Please upload an image or paste ingredient label text to scan.</span>
+                    </div>
+
+                    <!-- My Allergies / Diet Section -->
+                    <div class="p-3 bg-light rounded-3 border mb-3">
+                        <h6 class="fw-bold mb-2 text-dark">
+                            <i class="bi bi-heart-pulse me-2 text-danger"></i>My Allergies / Diet <span class="text-muted fw-normal small">(Optional)</span>
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-8">
+                                <label class="form-label small fw-semibold text-secondary mb-1">Select Allergies to Flag:</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    {% set allergy_options = [
+                                        ('peanuts', 'Peanuts'),
+                                        ('milk', 'Milk'),
+                                        ('gluten', 'Gluten'),
+                                        ('soy', 'Soy'),
+                                        ('eggs', 'Eggs'),
+                                        ('tree_nuts', 'Tree nuts'),
+                                        ('fish', 'Fish'),
+                                        ('shellfish', 'Shellfish'),
+                                        ('sesame', 'Sesame')
+                                    ] %}
+                                    {% for val, label in allergy_options %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="allergies" value="{{ val }}" id="allergy_{{ val }}"
+                                               {% if selected_allergies and val in selected_allergies %}checked{% endif %}>
+                                        <label class="form-check-label small" for="allergy_{{ val }}">
+                                            {{ label }}
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="dietSelect" class="form-label small fw-semibold text-secondary mb-1">Dietary Preference:</label>
+                                <select class="form-select form-select-sm" id="dietSelect" name="diet">
+                                    <option value="None" {% if not selected_diet or selected_diet == 'None' %}selected{% endif %}>None (default)</option>
+                                    <option value="Vegetarian" {% if selected_diet and selected_diet.lower() == 'vegetarian' %}selected{% endif %}>Vegetarian</option>
+                                    <option value="Vegan" {% if selected_diet and selected_diet.lower() == 'vegan' %}selected{% endif %}>Vegan</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Loading Spinner Bar (Triggered on form submission) -->
+                    <div id="loadingIndicator" class="alert alert-success d-none align-items-center gap-3 p-3 mb-3 shadow-sm rounded-3" role="status">
+                        <div class="spinner-border text-success" role="status" style="width: 2rem; height: 2rem;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-success">Scanning your food label... Please wait.</h6>
+                            <small class="text-secondary">Extracting text, running safety analysis, and cross-checking allergens...</small>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="reset" class="btn btn-outline-secondary px-4" id="clearFormBtn">Clear</button>
+                        <button type="submit" id="scanSubmitBtn" class="btn btn-success px-5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                            <i class="bi bi-shield-check" id="submitIcon"></i>
+                            <span id="submitBtnText">Scan Ingredients</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Analysis Results Section (If available) -->
+            {% if analysis_result %}
+
+            <!-- Historical View Banner (When viewing a saved scan) -->
+            {% if saved_scan %}
+            <div class="alert alert-primary d-flex align-items-center justify-content-between rounded-4 shadow-sm p-3 mb-4" role="status">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-clock-history fs-4 text-primary"></i>
+                    <div>
+                        <span class="fw-bold">Historical Scan #{{ saved_scan.id }}</span>
+                        <span class="text-secondary small ms-2">Saved on {{ saved_scan.scan_date.strftime('%Y-%m-%d %H:%M') if saved_scan.scan_date else 'Recent' }}</span>
+                        {% if saved_scan.image_filename %}
+                        <span class="badge bg-light text-dark border ms-2"><i class="bi bi-image me-1"></i>{{ saved_scan.image_filename }}</span>
+                        {% else %}
+                        <span class="badge bg-light text-secondary border ms-2"><i class="bi bi-textarea-t me-1"></i>Text-only Scan</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ url_for('main.export_report', scan_id=saved_scan.id) }}" class="btn btn-sm btn-outline-danger">
+                        <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                    </a>
+                    <a href="{{ url_for('main.history') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-arrow-left me-1"></i>Back to History
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Prominent Personal Allergy / Diet Conflict Red Alert Box -->
+            {% if analysis_result.has_conflict %}
+            <div class="alert alert-danger shadow-sm rounded-4 p-4 mb-4 border-2 border-danger" role="alert">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                    <span class="fs-4">⚠️</span>
+                    <h5 class="alert-heading fw-bold mb-0 text-danger">Avoid — Personal Allergy/Diet Conflict</h5>
+                </div>
+                <p class="mb-3">One or more scanned ingredients directly conflict with your selected personal allergies or dietary preferences:</p>
+                <ul class="mb-2 ps-3">
+                    {% for conflict in analysis_result.personal_conflicts %}
+                    <li class="fw-semibold text-danger mb-1">{{ conflict.message }}</li>
+                    {% endfor %}
+                </ul>
+                <div class="small text-muted mt-2 border-top border-danger pt-2">
+                    <em>Notice: Personal allergy and dietary conflicts override the normal safety verdict.</em>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Main Results Card -->
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" id="scanResultsCard">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 border-bottom pb-3 mb-4">
+                    <div>
+                        <span class="badge bg-{{ analysis_result.badge_class }} fs-6 px-3 py-2 fw-semibold">
+                            <i class="bi bi-shield-fill me-1"></i>{{ analysis_result.summary }}
+                        </span>
+                        {% if analysis_result.has_conflict and analysis_result.base_verdict %}
+                        <span class="badge bg-secondary fs-7 px-2 py-1 ms-2" title="Standard score verdict was: {{ analysis_result.base_verdict }}">
+                            Standard Verdict: {{ analysis_result.base_verdict }} (Overridden by Personal Preferences)
+                        </span>
+                        {% endif %}
+                        <h4 class="fw-bold mt-2 mb-0">{{ product_name }}</h4>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <!-- Safety Score -->
+                        <div class="text-center">
+                            <div class="fs-2 fw-bold text-{{ analysis_result.badge_class }}">{{ analysis_result.safety_score }}</div>
+                            <small class="text-secondary d-block" style="line-height:1.1;">Safety<br>Score</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Extracted Text Display -->
+                {% if extracted_text %}
+                <div class="card border-0 bg-light rounded-3 p-3 mb-4">
+                    <small class="fw-bold text-secondary text-uppercase tracking-wider mb-1 d-block">
+                        <i class="bi bi-textarea-t me-1 text-success"></i>Extracted Ingredient Label Text
+                    </small>
+                    <div class="small text-dark font-monospace" style="white-space: pre-wrap;">{{ extracted_text }}</div>
+                </div>
+                {% endif %}
+
+                <!-- Recognized Ingredient Badges -->
+                {% if analysis_result.detected_ingredients %}
+                <div class="mb-4">
+                    <h6 class="fw-bold mb-2 text-dark">Recognized Ingredient Chips:</h6>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for ing in analysis_result.detected_ingredients %}
+                        <span class="badge {% if ing.safety_rating == 'Safe' %}bg-success{% elif ing.safety_rating == 'Caution' %}bg-warning text-dark{% elif ing.safety_rating in ['Harmful', 'Avoid'] %}bg-danger{% else %}bg-secondary{% endif %} fs-7 px-3 py-2 rounded-pill">
+                            {{ ing.matched_name }}
+                            {% if ing.e_number %}<span class="opacity-75 font-monospace">({{ ing.e_number }})</span>{% endif %}
+                        </span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Stats Counters -->
+                <div class="row g-3 text-center mb-4">
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fs-4 fw-bold text-dark">{{ analysis_result.stats.total_detected }}</div>
+                            <small class="text-secondary">Ingredients Detected</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fs-4 fw-bold text-danger">{{ analysis_result.stats.allergen_count }}</div>
+                            <small class="text-secondary">Allergens Flagged</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fs-4 fw-bold text-warning">{{ analysis_result.stats.caution_count }}</div>
+                            <small class="text-secondary">Caution Additives</small>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="fs-4 fw-bold text-danger">{{ analysis_result.stats.harmful_count + analysis_result.stats.avoid_count }}</div>
+                            <small class="text-secondary">Harmful / Avoid</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allergen Alert Box -->
+                {% if analysis_result.flagged_allergens %}
+                <div class="alert alert-danger d-flex align-items-start gap-3 rounded-3 mb-4" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill fs-3 mt-1"></i>
+                    <div>
+                        <h6 class="alert-heading fw-bold mb-1">Potential Allergen Warning</h6>
+                        <p class="mb-2 small">This item contains ingredients associated with recognized allergen triggers:</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for allergen in analysis_result.flagged_allergens %}
+                            <span class="badge bg-danger fs-7 px-3 py-1">{{ allergen }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="alert alert-success d-flex align-items-center gap-2 rounded-3 mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill fs-5"></i>
+                    <div>No common major allergens detected in this scan.</div>
+                </div>
+                {% endif %}
+
+                <!-- Detailed Breakdown Table -->
+                <h5 class="fw-bold mb-3">Identified Ingredients Breakdown</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle border">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ingredient</th>
+                                <th>E-Number</th>
+                                <th>Category</th>
+                                <th>Safety Rating</th>
+                                <th>Allergen</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ing in analysis_result.detected_ingredients %}
+                            <tr>
+                                <td class="fw-semibold">
+                                    {{ ing.matched_name }}
+                                    {% if ing.raw_token != ing.matched_name %}
+                                    <br><small class="text-muted fw-normal">Raw: "{{ ing.raw_token }}" ({{ ing.confidence }}% match)</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ing.e_number %}
+                                    <span class="badge bg-secondary font-monospace">{{ ing.e_number }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">-</span>
+                                    {% endif %}
+                                </td>
+                                <td><span class="badge bg-light text-dark border">{{ ing.category }}</span></td>
+                                <td>
+                                    {% if ing.safety_rating == 'Safe' %}
+                                    <span class="badge bg-success">Safe</span>
+                                    {% elif ing.safety_rating == 'Caution' %}
+                                    <span class="badge bg-warning text-dark">Caution</span>
+                                    {% elif ing.safety_rating == 'Harmful' %}
+                                    <span class="badge bg-danger">Harmful</span>
+                                    {% elif ing.safety_rating == 'Avoid' %}
+                                    <span class="badge bg-danger">Avoid</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ ing.safety_rating }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ing.allergen_type %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">{{ ing.allergen_type }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">None</span>
+                                    {% endif %}
+                                </td>
+                                <td class="small text-secondary">{{ ing.description or ing.health_effects or '-' }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Navigation Action Links for Result Page -->
+                <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center pt-3 border-top mt-4">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('main.scan') }}" class="btn btn-success fw-semibold">
+                            <i class="bi bi-camera me-1"></i>Scan Again
+                        </a>
+                        <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary fw-semibold">
+                            <i class="bi bi-clock-history me-1"></i>View History
+                        </a>
+                        <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary fw-semibold">
+                            <i class="bi bi-search me-1"></i>Search Ingredients
+                        </a>
+                    </div>
+                    <button onclick="window.print()" class="btn btn-outline-dark btn-sm">
+                        <i class="bi bi-printer me-1"></i>Print Report
+                    </button>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

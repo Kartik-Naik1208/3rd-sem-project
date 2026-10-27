@@ -1,0 +1,140 @@
+/* ==========================================================================
+   IngredientIQ Custom Stylesheet
+   ========================================================================== */
+
+:root {
+    --primary-color: #166534;
+    --primary-hover: #14532d;
+    --accent-emerald: #10b981;
+    --brand-dark: #0f172a;
+    --brand-surface: #1e293b;
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+}
+
+body {
+    font-family: var(--font-sans);
+    color: #334155;
+    background-color: #f8fafc !important;
+}
+
+/* Navbar */
+.brand-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.brand-text {
+    font-size: 1.25rem;
+    letter-spacing: -0.02em;
+}
+
+.nav-link {
+    font-weight: 500;
+    transition: color 0.15s ease-in-out;
+}
+
+.nav-link.active {
+    color: #4ade80 !important;
+    font-weight: 600;
+}
+
+/* Hero Section */
+.hero-section {
+    background: radial-gradient(circle at 80% 20%, #1e3a2f 0%, #0f172a 70%);
+}
+
+.text-gradient {
+    background: linear-gradient(135deg, #4ade80 0%, #a7f3d0 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.text-success-light {
+    color: #86efac;
+}
+
+.fw-extrabold {
+    font-weight: 800;
+}
+
+/* Feature Cards & Animations */
+.feature-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.1) !important;
+}
+
+.feature-icon {
+    width: 56px;
+    height: 56px;
+}
+
+.hover-card {
+    transition: all 0.2s ease-in-out;
+}
+
+.hover-card:hover {
+    border-color: #22c55e !important;
+    transform: translateY(-3px);
+}
+
+/* Step Cards */
+.step-number {
+    display: inline-flex;
+    width: 36px;
+    height: 36px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background-color: #166534;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.95rem;
+}
+
+/* Drag & Drop File Upload Zone */
+.drop-zone {
+    border: 2px dashed #cbd5e1;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.drop-zone:hover, .drop-zone.dragover {
+    border-color: #166534;
+    background-color: #f0fdf4;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.max-h-150 {
+    max-height: 150px;
+    object-fit: contain;
+}
+
+/* Utility Helpers */
+.max-w-700 {
+    max-width: 700px;
+}
+
+.max-w-600 {
+    max-width: 600px;
+}
+
+.max-w-500 {
+    max-width: 500px;
+}
+
+.tracking-wider {
+    letter-spacing: 0.08em;
+}
+
+.hover-white:hover {
+    color: #fff !important;
+}

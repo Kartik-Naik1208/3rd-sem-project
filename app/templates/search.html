@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Search Ingredients - IngredientIQ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-search me-2 text-success"></i>Ingredient Database</h2>
+            <p class="text-secondary mb-0">Search additives, preservatives, E-numbers, and allergens.</p>
+        </div>
+        <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-2">
+            {{ results|length }} Ingredients Available
+        </span>
+    </div>
+
+    <!-- Search & Filter Form -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+        <form method="GET" action="{{ url_for('main.search') }}">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold">Search Ingredient Name, Alias, or E-Number</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-success"></i></span>
+                        <input type="text" name="q" class="form-control" placeholder="e.g. Sodium glutamate, E621, Caseen, Whey..." value="{{ query }}">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Category</label>
+                    <select name="category" class="form-select">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label small fw-semibold">Safety Level</label>
+                    <select name="safety" class="form-select">
+                        <option value="">All Safety Levels</option>
+                        <option value="Safe" {% if selected_safety == 'Safe' %}selected{% endif %}>Safe</option>
+                        <option value="Caution" {% if selected_safety == 'Caution' %}selected{% endif %}>Caution</option>
+                        <option value="Harmful" {% if selected_safety == 'Harmful' %}selected{% endif %}>Harmful</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-success w-100 fw-semibold">
+                        <i class="bi bi-search me-1"></i>Search
+                    </button>
+                    {% if query or selected_category or selected_safety %}
+                    <a href="{{ url_for('main.search') }}" class="btn btn-outline-secondary" title="Reset Filters">
+                        <i class="bi bi-x-circle"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Ingredient Cards Grid -->
+    <div class="row g-4">
+        {% for item in results %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 ingredient-card">
+                <!-- Header: Name + Safety Level -->
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="fw-bold mb-0 text-dark">{{ item.name }}</h5>
+                    {% set safety = item.safety_level or item.safety_rating or 'Safe' %}
+                    {% if safety == 'Safe' %}
+                    <span class="badge bg-success">Safe</span>
+                    {% elif safety == 'Caution' %}
+                    <span class="badge bg-warning text-dark">Caution</span>
+                    {% elif safety == 'Harmful' or safety == 'Avoid' %}
+                    <span class="badge bg-danger">{{ safety }}</span>
+                    {% else %}
+                    <span class="badge bg-secondary">{{ safety }}</span>
+                    {% endif %}
+                </div>
+
+                <!-- Badges: E-Number, Category, Banned Status -->
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    {% if item.e_number %}
+                    <span class="badge bg-light text-dark border font-monospace">{{ item.e_number }}</span>
+                    {% endif %}
+                    <span class="badge bg-secondary bg-opacity-10 text-secondary">{{ item.category }}</span>
+                    {% if item.banned_status %}
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger">
+                        <i class="bi bi-slash-circle me-1"></i>Banned
+                    </span>
+                    {% else %}
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                        Not Banned
+                    </span>
+                    {% endif %}
+                </div>
+
+                <!-- Structured Details -->
+                <div class="small mb-3">
+                    {% if item.aliases %}
+                    <div class="mb-1 text-secondary">
+                        <strong class="text-dark">Aliases:</strong> {{ item.aliases }}
+                    </div>
+                    {% endif %}
+
+                    {% set allergen_val = item.allergen_tag or item.allergen_type %}
+                    {% if allergen_val %}
+                    <div class="mb-1 text-danger">
+                        <strong>Allergen Tags:</strong> {{ allergen_val }}
+                    </div>
+                    {% endif %}
+
+                    {% if item.diet_flags %}
+                    <div class="mb-1 text-warning-emphasis">
+                        <strong class="text-dark">Diet Conflicts:</strong> {{ item.diet_flags }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if item.description %}
+                <p class="text-secondary small mb-2">{{ item.description }}</p>
+                {% endif %}
+
+                {% if item.health_effects %}
+                <div class="mt-auto pt-2 border-top small text-muted">
+                    <strong class="text-dark">Health Effects:</strong> {{ item.health_effects }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-search display-4 text-secondary mb-3 d-block"></i>
+            <h5 class="fw-bold">No matching ingredient found</h5>
+            <p class="text-secondary">
+                {% if query %}
+                No ingredient matched "{{ query }}". Please check your spelling or search by E-number (e.g., E621).
+                {% else %}
+                No ingredients matched the selected filters.
+                {% endif %}
+            </p>
+            <a href="{{ url_for('main.search') }}" class="btn btn-outline-success btn-sm">Clear Search</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

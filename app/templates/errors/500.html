@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Something Went Wrong - Food Ingredient Safety Scanner{% endblock %}
+
+{% block content %}
+<div class="container py-5 text-center">
+    <div class="py-5 max-w-600 mx-auto">
+        <div class="display-1 fw-bold text-danger mb-2">500</div>
+        <h2 class="fw-bold mb-3">Something Went Wrong</h2>
+        <p class="text-secondary lead mb-4">
+            We're sorry, but something unexpected happened. Please try again.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a href="{{ url_for('main.index') }}" class="btn btn-success px-4 py-2 fw-semibold shadow-sm">
+                <i class="bi bi-house-door me-1"></i>Go Home
+            </a>
+            <a href="{{ url_for('main.scan') }}" class="btn btn-outline-secondary px-4 py-2 fw-semibold">
+                <i class="bi bi-arrow-clockwise me-1"></i>Try Again
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

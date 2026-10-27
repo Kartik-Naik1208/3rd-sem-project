@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Scan History - IngredientIQ{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-clock-history me-2 text-success"></i>Scan History</h2>
+            <p class="text-secondary mb-0">Browse past label audits, detected allergens, and safety scores.</p>
+        </div>
+        <a href="{{ url_for('main.scan') }}" class="btn btn-success">
+            <i class="bi bi-camera me-1"></i>New Scan
+        </a>
+    </div>
+
+    {% if records %}
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 80px;">Scan ID</th>
+                        <th>Scan Date & Time</th>
+                        <th>Image Filename</th>
+                        <th>Safety Score</th>
+                        <th>Final Verdict</th>
+                        <th class="text-end" style="min-width: 170px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                    <tr>
+                        <td class="fw-bold text-muted font-monospace">#{{ rec.id }}</td>
+                        <td class="small text-secondary">
+                            {{ rec.scan_date.strftime('%Y-%m-%d %H:%M') if rec.scan_date else (rec.created_at.strftime('%Y-%m-%d %H:%M') if rec.created_at else 'Recent') }}
+                        </td>
+                        <td>
+                            {% if rec.image_filename %}
+                            <span class="badge bg-light text-dark border font-monospace">
+                                <i class="bi bi-image me-1 text-primary"></i>{{ rec.image_filename }}
+                            </span>
+                            {% else %}
+                            <span class="badge bg-light text-secondary border">
+                                <i class="bi bi-textarea-t me-1"></i>Text-Only
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% set v_lower = (rec.verdict or rec.safety_summary or '').lower() %}
+                            {% if 'avoid' in v_lower or 'high' in v_lower %}
+                                <span class="badge bg-danger fs-6 px-3 py-1">{{ rec.score }}</span>
+                            {% elif 'caution' in v_lower %}
+                                <span class="badge bg-warning text-dark fs-6 px-3 py-1">{{ rec.score }}</span>
+                            {% else %}
+                                <span class="badge bg-success fs-6 px-3 py-1">{{ rec.score }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if rec.verdict == 'Avoid' %}
+                            <span class="badge bg-danger"><i class="bi bi-exclamation-triangle-fill me-1"></i>Avoid</span>
+                            {% elif rec.verdict == 'Clean & Safe' or rec.safety_summary == 'Safe & Clean' or rec.verdict == 'Safe' %}
+                            <span class="badge bg-success">Clean & Safe</span>
+                            {% elif rec.verdict == 'Moderate Caution' or rec.safety_summary == 'Moderate Caution' %}
+                            <span class="badge bg-warning text-dark">Moderate Caution</span>
+                            {% elif rec.verdict == 'High Risk' or rec.safety_summary == 'High Risk' %}
+                            <span class="badge bg-danger">High Risk</span>
+                            {% else %}
+                            <span class="badge bg-secondary">{{ rec.verdict or rec.safety_summary }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('main.view_scan', scan_id=rec.id) }}" class="btn btn-sm btn-outline-success me-1">
+                                <i class="bi bi-eye me-1"></i>View Result
+                            </a>
+                            <a href="{{ url_for('main.export_report', scan_id=rec.id) }}" class="btn btn-sm btn-outline-danger" title="Download PDF Report">
+                                <i class="bi bi-file-earmark-pdf"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination and pagination.pages > 1 %}
+    <nav aria-label="Scan history pages" class="d-flex justify-content-center">
+        <ul class="pagination pagination-sm">
+            {% if pagination.has_prev %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.history', page=pagination.prev_num) }}">Previous</a>
+            </li>
+            {% endif %}
+            {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                {% if p %}
+                    <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                        <a class="page-link" href="{{ url_for('main.history', page=p) }}">{{ p }}</a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+                {% endif %}
+            {% endfor %}
+            {% if pagination.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="{{ url_for('main.history', page=pagination.next_num) }}">Next</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5 bg-white rounded-4 shadow-sm p-4">
+        <i class="bi bi-inbox display-4 text-secondary mb-3 d-block"></i>
+        <h4 class="fw-bold mb-2">No Scans Recorded Yet</h4>
+        <p class="text-secondary max-w-500 mx-auto mb-4">
+            No scans yet. Upload an image or enter ingredients to get started.
+        </p>
+        <a href="{{ url_for('main.scan') }}" class="btn btn-success fw-semibold px-4">
+            <i class="bi bi-camera me-1"></i>Perform First Scan
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
