@@ -125,5 +125,129 @@
             </div>
         </div>
     </div>
+
+    <!-- Review Queue for Unidentified Tokens & Database Expansion -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mt-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-journal-plus me-2 text-primary"></i>Knowledge Base Expansion & Review Queue</h5>
+                <small class="text-secondary">Unidentified or review-needed tokens captured during user scans. Add them to the permanent catalog with one click.</small>
+            </div>
+            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary px-3 py-2">
+                {{ pending_unidentified|length }} Pending Items
+            </span>
+        </div>
+
+        {% if pending_unidentified %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle small mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Unrecognized Token</th>
+                        <th>Frequency</th>
+                        <th>Last Seen</th>
+                        <th>Suggested Action</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in pending_unidentified %}
+                    <tr>
+                        <td>
+                            <strong class="text-dark">{{ item.clean_token }}</strong>
+                            {% if item.raw_token and item.raw_token != item.clean_token %}
+                            <small class="text-muted d-block">Raw: <em>"{{ item.raw_token }}"</em></small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ item.occurrence_count }} scan(s)</span>
+                        </td>
+                        <td class="text-muted">
+                            {{ item.last_seen.strftime('%Y-%m-%d %H:%M') if item.last_seen else 'N/A' }}
+                        </td>
+                        <td>
+                            {% if item.suggested_match %}
+                            <span class="text-info"><i class="bi bi-arrow-right-short"></i>Similar to: {{ item.suggested_match }}</span>
+                            {% else %}
+                            <span class="text-muted">New ingredient candidate</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1"
+                                    data-bs-toggle="collapse" data-bs-target="#addForm_{{ item.id }}">
+                                <i class="bi bi-plus-circle me-1"></i>Add to Catalog
+                            </button>
+                            <form action="{{ url_for('main.admin_dismiss_unidentified', token_id=item.id) }}" method="POST" class="d-inline ms-1">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" title="Dismiss token">
+                                    <i class="bi bi-x"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr class="collapse" id="addForm_{{ item.id }}">
+                        <td colspan="5" class="bg-light p-3 border-top-0">
+                            <form action="{{ url_for('main.admin_add_ingredient') }}" method="POST" class="row g-2">
+                                <input type="hidden" name="unidentified_id" value="{{ item.id }}">
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Standard Name</label>
+                                    <input type="text" name="name" class="form-control form-control-sm" value="{{ item.clean_token|title }}" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Category</label>
+                                    <select name="category" class="form-select form-select-sm">
+                                        <option value="Food Ingredients" selected>Food Ingredients</option>
+                                        <option value="Nuts & Seeds">Nuts & Seeds</option>
+                                        <option value="Cereals & Grains">Cereals & Grains</option>
+                                        <option value="Pulses & Legumes">Pulses & Legumes</option>
+                                        <option value="Spices & Condiments">Spices & Condiments</option>
+                                        <option value="Oils & Fats">Oils & Fats</option>
+                                        <option value="Dairy">Dairy</option>
+                                        <option value="Food Additive">Food Additive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">Type</label>
+                                    <select name="ingredient_type" class="form-select form-select-sm">
+                                        <option value="food" selected>Food</option>
+                                        <option value="additive">Additive</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label small fw-semibold">Safety Level</label>
+                                    <select name="safety_level" class="form-select form-select-sm">
+                                        <option value="Safe" selected>Safe</option>
+                                        <option value="Caution">Caution</option>
+                                        <option value="Harmful">Harmful</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-sm btn-success w-100">Save & Approve</button>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Aliases (Comma separated)</label>
+                                    <input type="text" name="aliases" class="form-control form-control-sm" value="{{ item.clean_token }}, {{ item.raw_token }}" placeholder="e.g. Hindi name, alternative spelling">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Allergen Tag</label>
+                                    <input type="text" name="allergen_tag" class="form-control form-control-sm" placeholder="e.g. nuts, gluten, milk">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-semibold">Simple Explanation</label>
+                                    <input type="text" name="what_is_it" class="form-control form-control-sm" placeholder="A wholesome natural ingredient...">
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-check2-all fs-2 d-block text-success mb-2"></i>
+            Review queue is clear! All scanned ingredient tokens have been recognized or reviewed.
+        </div>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

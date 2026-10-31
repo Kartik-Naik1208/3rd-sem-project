@@ -1,0 +1,617 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product_name }} — Ingredient Safety & Children's Age Guidance — IngredientIQ{% endblock %}
+
+{% block content %}
+<div class="container py-4 py-md-5">
+    <!-- Breadcrumb & Top Bar -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a href="{{ url_for('main.scan') }}" class="text-decoration-none">Scan</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Results</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ url_for('main.scan') }}" class="btn btn-outline-success btn-sm fw-semibold">
+                <i class="bi bi-camera me-1"></i>Scan Another Product
+            </a>
+            <a href="{{ url_for('main.history') }}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-clock-history me-1"></i>History
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-dark btn-sm d-none d-md-inline-flex align-items-center gap-1">
+                <i class="bi bi-printer"></i>Print Results
+            </button>
+            {% if saved_scan %}
+            <a href="{{ url_for('main.export_report', scan_id=saved_scan.id) }}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-file-earmark-pdf me-1"></i>PDF Report
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Historical Scan Banner (if saved scan) -->
+    {% if saved_scan %}
+    <div class="alert alert-primary bg-primary bg-opacity-10 border-primary border-opacity-25 rounded-4 shadow-sm p-3 mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2" role="status">
+        <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-shield-check fs-4 text-primary"></i>
+            <div>
+                <span class="fw-bold text-dark">Historical Scan #{{ saved_scan.id }}</span>
+                <span class="text-secondary small ms-2">
+                    <i class="bi bi-calendar3 me-1"></i>{{ saved_scan.scan_date.strftime('%B %d, %Y at %I:%M %p UTC') if saved_scan.scan_date else 'Recent' }}
+                </span>
+                {% if saved_scan.image_filename %}
+                <span class="badge bg-white text-dark border ms-2"><i class="bi bi-camera me-1 text-primary"></i>Image Scan</span>
+                {% else %}
+                <span class="badge bg-white text-secondary border ms-2"><i class="bi bi-textarea-t me-1"></i>Direct Text Scan</span>
+                {% endif %}
+            </div>
+        </div>
+        <span class="badge bg-{{ analysis_result.badge_class }} fs-7 px-3 py-2 fw-semibold">
+            {{ analysis_result.summary }}
+        </span>
+    </div>
+    {% endif %}
+
+    <!-- 1. Header Hero Card: Product Name, Uploaded Image, Verdict & Score -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <div class="row g-4 align-items-center">
+            <!-- Uploaded Image / Thumbnail -->
+            <div class="col-md-3 col-sm-4 text-center">
+                {% if saved_scan and saved_scan.image_filename %}
+                <div class="position-relative d-inline-block rounded-4 p-2 bg-light border shadow-sm">
+                    <img src="{{ url_for('main.uploaded_file', filename=saved_scan.image_filename) }}" 
+                         alt="{{ product_name }}" 
+                         class="img-fluid rounded-3" 
+                         style="max-height: 180px; max-width: 100%; object-fit: contain;">
+                    <div class="position-absolute bottom-0 start-50 translate-middle-x mb-2">
+                        <span class="badge bg-dark bg-opacity-75 text-white small px-2 py-1">Scanned Label</span>
+                    </div>
+                </div>
+                {% else %}
+                <div class="p-4 bg-light rounded-4 border text-center text-muted">
+                    <i class="bi bi-upc-scan display-4 text-success d-block mb-2"></i>
+                    <span class="small fw-semibold text-secondary">Ingredient Label Analysis</span>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Product Details & Summary -->
+            <div class="col-md-6 col-sm-8">
+                <div class="d-flex align-items-center gap-2 flex-wrap mb-2">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success fs-8">
+                        <i class="bi bi-check2-circle me-1"></i>IngredientIQ Verified Analysis
+                    </span>
+                    {% if analysis_result.has_conflict and analysis_result.base_verdict %}
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger fs-8">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Personal Conflict Override
+                    </span>
+                    {% endif %}
+                </div>
+                <h2 class="fw-bold text-dark mb-1">{{ product_name }}</h2>
+                <p class="text-secondary small mb-3">
+                    Complete product ingredient breakdown, individual safety assessments, pediatric age guidance, and allergen screening.
+                </p>
+                <div class="d-flex flex-wrap gap-2 text-muted small">
+                    <div><i class="bi bi-clock me-1 text-primary"></i>Scanned: <strong>{{ saved_scan.scan_date.strftime('%b %d, %Y %I:%M %p') if saved_scan and saved_scan.scan_date else 'Just now' }}</strong></div>
+                    <span class="text-muted">•</span>
+                    <div><i class="bi bi-card-checklist me-1 text-success"></i>Ingredients: <strong>{{ analysis_result.detected_ingredients|length }} detected</strong></div>
+                </div>
+            </div>
+
+            <!-- Overall Verdict & Safety Score Gauge -->
+            <div class="col-md-3 text-md-end text-center">
+                <div class="bg-light p-3 rounded-4 border shadow-sm d-inline-block text-center" style="min-width: 170px;">
+                    <span class="text-muted fw-semibold text-uppercase d-block mb-1" style="font-size: 0.72rem; letter-spacing: 0.5px;">Safety Score</span>
+                    <div class="display-5 fw-bold text-{{ analysis_result.badge_class }} lh-1 mb-1">
+                        {{ analysis_result.safety_score }}<span class="fs-6 text-muted">/100</span>
+                    </div>
+                    <span class="badge bg-{{ analysis_result.badge_class }} fs-8 px-2 py-1">
+                        {{ analysis_result.summary }}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4 Metric Counters (Section 2) -->
+        <hr class="my-4 text-muted opacity-25">
+        <div class="row g-3 text-center">
+            <div class="col-6 col-md-3">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <span class="text-secondary small d-block mb-1">Recognized Ingredients</span>
+                    <div class="fs-4 fw-bold text-success">
+                        {{ analysis_result.stats.recognized_count + analysis_result.stats.review_count if analysis_result.stats else (analysis_result.detected_ingredients|length - analysis_result.unrecognized_count) }}
+                        <span class="fs-7 text-muted fw-normal">/ {{ analysis_result.detected_ingredients|length }}</span>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">Indexed in database</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <span class="text-secondary small d-block mb-1">Requiring Attention</span>
+                    <div class="fs-4 fw-bold {% if (analysis_result.stats.caution_count + analysis_result.stats.harmful_count + analysis_result.stats.avoid_count) > 0 %}text-warning{% else %}text-success{% endif %}">
+                        {{ analysis_result.stats.caution_count + analysis_result.stats.harmful_count + analysis_result.stats.avoid_count if analysis_result.stats else 0 }}
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">Caution or restricted items</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <span class="text-secondary small d-block mb-1">Declared Allergens</span>
+                    <div class="fs-4 fw-bold {% if analysis_result.flagged_allergens %}text-danger{% else %}text-success{% endif %}">
+                        {{ analysis_result.flagged_allergens|length }}
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">{{ analysis_result.flagged_allergens|join(', ') if analysis_result.flagged_allergens else 'None flagged' }}</small>
+                </div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <span class="text-secondary small d-block mb-1">Unidentified Tokens</span>
+                    <div class="fs-4 fw-bold {% if analysis_result.unrecognized_count > 0 %}text-secondary{% else %}text-success{% endif %}">
+                        {{ analysis_result.unrecognized_count }}
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;">Not yet indexed in database</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Important Warnings & Alerts Section (Section 10) -->
+    {% if analysis_result.has_conflict or analysis_result.flagged_allergens or analysis_result.unrecognized_count > 0 or nut_choking_items or analysis_result.nut_choking_items or analysis_result.what_this_means_for_me.choking_hazards or analysis_result.what_this_means_for_me.age_restrictions %}
+    <div class="mb-4">
+        <!-- Personal Allergy/Diet Conflict Red Banner -->
+        {% if analysis_result.has_conflict %}
+        <div class="alert alert-danger shadow-sm rounded-4 p-4 mb-3 border-2 border-danger" role="alert">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <i class="bi bi-exclamation-octagon-fill fs-3 text-danger"></i>
+                <h5 class="alert-heading fw-bold mb-0 text-danger">Avoid — Personal Allergy/Diet Conflict</h5>
+            </div>
+            <p class="mb-2 text-dark">One or more scanned ingredients directly conflict with your selected personal allergies or dietary preferences:</p>
+            <ul class="mb-2 ps-3 text-danger fw-semibold">
+                {% for conflict in analysis_result.personal_conflicts %}
+                <li class="mb-1">{{ conflict.message }}</li>
+                {% endfor %}
+            </ul>
+            <small class="text-muted d-block border-top border-danger pt-2 mt-2">
+                <em>Notice: Personal allergy and dietary conflicts override the general safety verdict.</em>
+            </small>
+        </div>
+        {% endif %}
+
+        <!-- Declared Allergens Callout -->
+        {% if analysis_result.flagged_allergens %}
+        <div class="alert alert-warning border-warning bg-warning bg-opacity-10 rounded-4 p-3 mb-3 d-flex align-items-center gap-3">
+            <i class="bi bi-shield-exclamation fs-3 text-warning"></i>
+            <div>
+                <strong class="text-dark d-block">Major Food Allergens Detected:</strong>
+                <span class="text-dark">This product contains <strong>{{ analysis_result.flagged_allergens|join(', ') }}</strong>. Individuals with diagnosed allergies to these foods should strictly avoid this product.</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Choking Hazard Warning for Young Children -->
+        {% set display_choking_nuts = nut_choking_items if nut_choking_items is defined and nut_choking_items else (analysis_result.nut_choking_items if analysis_result.nut_choking_items is defined else []) %}
+        {% if display_choking_nuts %}
+        <div class="alert alert-danger bg-danger bg-opacity-10 border-danger rounded-4 p-3 mb-3 d-flex align-items-center gap-3">
+            <i class="bi bi-cone-striped fs-3 text-danger"></i>
+            <div>
+                <strong class="text-danger d-block"><i class="bi bi-exclamation-triangle-fill me-1"></i>Pediatric Choking Hazard Warning (Children Under 5):</strong>
+                <span class="text-dark">This product contains <strong>{{ display_choking_nuts|unique|join(', ') }}</strong>. Whole peanuts, tree nuts, and large firm chunks present a severe choking hazard for children under 5 years of age (AAP & NHS guidelines). Always offer nuts to infants and young toddlers in a smooth, finely ground paste or butter texture.</span>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Notice on Unverified Substances -->
+        {% if analysis_result.unrecognized_count and analysis_result.unrecognized_count > 0 %}
+        <div class="alert alert-secondary bg-light border rounded-4 p-3 mb-3 d-flex align-items-center gap-3">
+            <i class="bi bi-question-diamond-fill fs-3 text-secondary"></i>
+            <div class="small">
+                <strong class="text-dark">Notice on Unverified Ingredients:</strong> {{ analysis_result.unrecognized_count }} item(s) could not be matched to our verified food and additive registers. Unrecognized substances are marked with <em>Insufficient information</em> and are <strong>never assumed to be safe</strong>.
+                <div class="text-muted mt-1">Please inspect physical packaging label to verify accurate spelling and ingredients.</div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- 3. Overall Product Assessment: Two Summary Cards (Sections 6 & 7) -->
+    <div class="row g-4 mb-4">
+        <!-- Card 1: Is This Product Suitable for Children? (Section 6) -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-start border-4 border-{{ analysis_result.child_suitability.badge_class }} bg-white">
+                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-people-fill text-primary me-2"></i>Is This Product Suitable for Children?
+                        </h5>
+                        <small class="text-muted">Child Suitability assessment across growth stages</small>
+                    </div>
+                    <span class="badge bg-{{ analysis_result.child_suitability.badge_class }} fs-8 px-2 py-1 text-wrap text-end">
+                        {{ analysis_result.child_suitability.simple_status or analysis_result.child_suitability.status }}
+                    </span>
+                </div>
+                <p class="small text-secondary mb-3">{{ analysis_result.child_suitability.summary }}</p>
+
+                <!-- Dynamic Age-Group Guidance Table (Section 6) -->
+                <div class="mb-3">
+                    <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-table me-1 text-primary"></i>Age-Group Guidance Breakdown:</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle mb-0 small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 25%;">Age Group</th>
+                                    <th style="width: 30%;">Assessment</th>
+                                    <th>Pediatric Guidance & Rationale</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if analysis_result.child_suitability.age_breakdown %}
+                                    {% for row in analysis_result.child_suitability.age_breakdown %}
+                                    <tr>
+                                        <td class="fw-bold text-dark">{{ row.age_group }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ row.badge_class }} bg-opacity-10 text-{{ row.badge_class }} border border-{{ row.badge_class }} fs-9">
+                                                {{ row.assessment }}
+                                            </span>
+                                        </td>
+                                        <td class="text-secondary">{{ row.guidance }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td class="fw-bold text-dark">Under 6 months</td>
+                                        <td><span class="badge bg-danger fs-9">Unsuitable</span></td>
+                                        <td class="text-secondary">Exclusive breastfeeding or infant formula recommended by WHO/AAP.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-dark">6–12 months</td>
+                                        <td><span class="badge bg-warning fs-9">Caution</span></td>
+                                        <td class="text-secondary">Ensure age-appropriate pureed texture; avoid added salt/sugar and honey.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-dark">1–2 years</td>
+                                        <td><span class="badge bg-success fs-9">Suitable</span></td>
+                                        <td class="text-secondary">Assess whole-nut choking risks and avoid added sugars (AAP).</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-dark">2–5 years</td>
+                                        <td><span class="badge bg-success fs-9">Suitable</span></td>
+                                        <td class="text-secondary">Supervise chewing for nuts/seeds; limit synthetic dyes and free sugars.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-dark">5–12 years</td>
+                                        <td><span class="badge bg-success fs-9">Suitable</span></td>
+                                        <td class="text-secondary">Suitable for school-age diet; check sensitivities to artificial colors.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="fw-bold text-dark">Teenagers</td>
+                                        <td><span class="badge bg-success fs-9">Suitable</span></td>
+                                        <td class="text-secondary">Appropriate within a varied adolescent diet; check personal allergies.</td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="text-muted fst-italic mt-auto pt-2 border-top" style="font-size: 0.7rem;">
+                    <strong>Disclaimer:</strong> {{ analysis_result.child_suitability.disclaimer }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Is It Suitable for Regular Consumption? (Section 7) -->
+        <div class="col-lg-6">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 border-start border-4 border-{{ analysis_result.regular_consumption.badge_class }} bg-white">
+                <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                    <div>
+                        <h5 class="fw-bold text-dark mb-0">
+                            <i class="bi bi-calendar-check-fill text-success me-2"></i>Can I consume or use this product regularly?
+                        </h5>
+                        <small class="text-muted">Regular Consumption assessment for routine dietary frequency and lifestyle wellness</small>
+                    </div>
+                    <span class="badge bg-{{ analysis_result.regular_consumption.badge_class }} fs-8 px-2 py-1 text-wrap text-end">
+                        {{ analysis_result.regular_consumption.simple_status or analysis_result.regular_consumption.status }}
+                    </span>
+                </div>
+                <p class="small text-secondary mb-3">{{ analysis_result.regular_consumption.summary }}</p>
+
+                <h6 class="fw-bold text-dark small mb-2"><i class="bi bi-card-checklist me-1 text-success"></i>Key Nutritional & Additive Factors:</h6>
+                <ul class="small ps-3 text-secondary mb-3">
+                    {% for factor in analysis_result.regular_consumption.key_factors %}
+                    <li class="mb-1">{{ factor }}</li>
+                    {% endfor %}
+                </ul>
+
+                {% if analysis_result.regular_consumption.suggestions %}
+                <h6 class="fw-bold text-dark small mb-1"><i class="bi bi-lightbulb me-1 text-warning"></i>Healthy Living Suggestions:</h6>
+                <ul class="small ps-3 text-secondary mb-3">
+                    {% for sug in analysis_result.regular_consumption.suggestions %}
+                    <li class="mb-1">{{ sug }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <div class="text-muted fst-italic mt-auto pt-2 border-top" style="font-size: 0.7rem;">
+                    <strong>Disclaimer:</strong> {{ analysis_result.regular_consumption.limitations_note }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Packaging Sections Detected (If any) -->
+    {% if analysis_result.sections and (analysis_result.sections.may_contain or analysis_result.sections.contains or analysis_result.sections.warnings or analysis_result.sections.nutrition) %}
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4 bg-white">
+        <h6 class="fw-bold text-dark mb-3">
+            <i class="bi bi-upc text-primary me-2"></i>Packaging Statements & Advisory Warnings Detected
+        </h6>
+        <div class="row g-3">
+            {% if analysis_result.sections.contains %}
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <strong class="text-dark small d-block mb-1"><i class="bi bi-check-circle text-primary me-1"></i>Declared Ingredients / Contains:</strong>
+                    <span class="small text-secondary">{{ analysis_result.sections.contains }}</span>
+                </div>
+            </div>
+            {% endif %}
+            {% if analysis_result.sections.may_contain %}
+            <div class="col-md-6">
+                <div class="p-3 bg-warning bg-opacity-10 border border-warning rounded-3 h-100">
+                    <strong class="text-dark small d-block mb-1"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Cross-Contamination ("May Contain"):</strong>
+                    <span class="small text-dark">{{ analysis_result.sections.may_contain }}</span>
+                </div>
+            </div>
+            {% endif %}
+            {% if analysis_result.sections.warnings %}
+            <div class="col-md-6">
+                <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded-3 h-100">
+                    <strong class="text-dark small d-block mb-1"><i class="bi bi-shield-exclamation text-danger me-1"></i>Manufacturer Warnings:</strong>
+                    <span class="small text-dark">{{ analysis_result.sections.warnings }}</span>
+                </div>
+            </div>
+            {% endif %}
+            {% if analysis_result.sections.nutrition %}
+            <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border h-100">
+                    <strong class="text-dark small d-block mb-1"><i class="bi bi-heart-pulse text-info me-1"></i>Nutrition Facts Preview:</strong>
+                    <span class="small text-secondary">{{ analysis_result.sections.nutrition }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- 4. Complete Ingredient Breakdown (Sections 3, 4, 5, 8, 9) -->
+    <div class="mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+            <div>
+                <h4 class="fw-bold text-dark mb-0">
+                    <i class="bi bi-card-list text-primary me-2"></i>Complete Identified Ingredients Breakdown
+                </h4>
+                <p class="text-secondary small mb-0">
+                    Every ingredient listed individually in label sequence with short 2–3 line descriptions, safety ratings, and children's age suitability.
+                </p>
+            </div>
+            <div class="badge bg-light text-dark border px-3 py-2 fs-7">
+                <span id="ingredientSearchCount">{{ analysis_result.detected_ingredients|length }}</span> ingredients detected
+            </div>
+        </div>
+
+        <!-- Live Search & Filter Toolbar -->
+        <div class="card border-0 bg-light rounded-4 p-3 mb-3 border">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-6">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" id="ingredientSearchInput" 
+                               placeholder="Type to search ingredients, E-numbers, or categories (e.g. Peanut, E330, Wheat)...">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="d-flex flex-wrap gap-1 justify-content-md-end">
+                        <button type="button" class="btn btn-sm btn-dark ingredient-filter-pill active" data-filter="all">All</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ingredient-filter-pill" data-filter="no specific concern identified">Safe</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ingredient-filter-pill" data-filter="caution">Caution</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ingredient-filter-pill" data-filter="potential concern">Concern</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary ingredient-filter-pill" data-filter="insufficient information">Unverified</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- No Results Alert -->
+        <div id="noIngredientResults" class="alert alert-info d-none text-center rounded-3 p-3 mb-3">
+            <i class="bi bi-search me-1"></i>No ingredients matching your search query. Try another keyword or clear the search field.
+        </div>
+
+        <!-- Individual Ingredient Cards List -->
+        <div class="d-flex flex-column gap-3" id="ingredientEntriesContainer">
+            {% for ing in analysis_result.detected_ingredients %}
+            <div class="card border-0 rounded-4 shadow-sm p-3 p-md-4 border-start border-4 border-{{ ing.safety_status_badge or ing.simple_badge or 'secondary' }} ingredient-entry-item bg-white"
+                 data-search-text="{{ ing.display_name or ing.matched_name }} {{ ing.raw_token }} {{ ing.e_number or '' }} {{ ing.category }} {{ ing.short_description or ing.what_it_does }} {{ ing.safety_status or '' }}"
+                 data-status-filter="{{ (ing.safety_status or ing.simple_status or 'insufficient information')|lower }}">
+                
+                <!-- Card Header: Canonical Name, Raw Label Text, Category, Percentage -->
+                <div class="d-flex align-items-start justify-content-between flex-wrap gap-2 mb-2">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                            <h5 class="fw-bold text-dark mb-0 fs-5">
+                                {{ ing.matched_name or ing.display_name }}
+                            </h5>
+
+                            <!-- Recognition Status Pill -->
+                            {% if ing.recognition_status == 'Recognized' %}
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success fs-8">
+                                <i class="bi bi-check-circle-fill me-1"></i>Recognized
+                            </span>
+                            {% elif ing.recognition_status == 'Recognized — needs review' %}
+                            <span class="badge bg-info bg-opacity-10 text-info border border-info fs-8">
+                                <i class="bi bi-exclamation-circle me-1"></i>Recognized — needs review
+                            </span>
+                            {% elif ing.recognition_status == 'OCR issue' %}
+                            <span class="badge bg-warning bg-opacity-10 text-warning border border-warning fs-8">
+                                <i class="bi bi-eye-slash me-1"></i>OCR issue
+                            </span>
+                            {% else %}
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary fs-8">
+                                <i class="bi bi-question-circle me-1"></i>Unidentified
+                            </span>
+                            {% endif %}
+
+                            <!-- Food vs Additive Pill -->
+                            {% if ing.ingredient_type == 'food' %}
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary fs-8">
+                                <i class="bi bi-egg-fried me-1"></i>Food Ingredient
+                            </span>
+                            {% elif ing.ingredient_type == 'additive' %}
+                            <span class="badge bg-secondary bg-opacity-10 text-dark border fs-8">
+                                <i class="bi bi-flask me-1"></i>Food Additive
+                            </span>
+                            {% endif %}
+
+                            <!-- Category -->
+                            <span class="badge bg-light text-secondary border fs-8">{{ ing.category }}</span>
+
+                            <!-- Declared Percentage if present -->
+                            {% if ing.percentage %}
+                            <span class="badge bg-dark text-white fs-8">{{ ing.percentage }}</span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Original Label Name Extracted -->
+                        {% if ing.raw_token and ing.raw_token != ing.matched_name %}
+                        <div class="text-muted small">
+                            <i class="bi bi-tag me-1"></i>Original label text: <em>"{{ ing.raw_token }}"</em>
+                            {% if ing.confidence and ing.confidence > 0 %}
+                            <span class="ms-1 text-secondary">(Match Confidence: {{ ing.confidence }}%)</span>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Safety Status Pill on Right Header -->
+                    <div>
+                        <span class="badge bg-{{ ing.safety_status_badge or ing.simple_badge or 'secondary' }} fs-7 px-3 py-2 fw-semibold">
+                            <i class="bi bi-shield-fill me-1"></i>{{ ing.safety_status or ing.simple_status }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 1. Description: Strictly 2-3 Short Lines (Section 3) -->
+                <div class="mb-3">
+                    <p class="text-secondary small mb-0 lh-base">
+                        {{ ing.short_description or ing.plain_explanation or ing.simple_explanation }}
+                    </p>
+                </div>
+
+                <!-- 2. Dual Assessment Grid: Safety Assessment Box & Children's Suitability Box -->
+                <div class="row g-3 mb-2">
+                    <!-- Safety Assessment Box (Section 4) -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 border-start border-3 border-{{ ing.safety_status_badge or ing.simple_badge or 'secondary' }}">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <strong class="text-dark small"><i class="bi bi-shield-check text-success me-1"></i>Safety Assessment:</strong>
+                                <span class="badge bg-{{ ing.safety_status_badge or ing.simple_badge or 'secondary' }} fs-9">
+                                    {{ ing.safety_status or ing.simple_status }}
+                                </span>
+                            </div>
+                            <span class="small text-secondary d-block">
+                                {{ ing.safety_short_explanation or ing.known_safety_concerns or 'No specific toxicity concerns identified under standard dietary intake levels.' }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- "Can Children Have This?" Section (Section 5) -->
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-3 border h-100 border-start border-3 border-{{ ing.children_suitability_badge or 'primary' }}">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <strong class="text-dark small"><i class="bi bi-people-fill text-primary me-1"></i>Can Children Have This?</strong>
+                                <span class="badge bg-{{ ing.children_suitability_badge or 'primary' }} fs-9">
+                                    {{ ing.children_suitability_status or 'Generally suitable' }}
+                                </span>
+                            </div>
+                            <span class="small text-secondary d-block mb-1">
+                                {{ ing.children_guidance or ing.child_concerns or 'Wholesome everyday food component suitable for children in balanced portions.' }}
+                            </span>
+                            <div class="small fw-semibold text-dark mt-1">
+                                <i class="bi bi-info-circle me-1 text-primary"></i>Age Guidance:
+                                <span class="fw-normal text-secondary">{{ ing.age_guidance_text or ing.age_considerations or 'No specific minimum age established from the available information.' }}</span>
+                            </div>
+                            {% if ing.choking_hazard %}
+                            <div class="small text-danger fw-semibold mt-1">
+                                <i class="bi bi-exclamation-triangle-fill me-1"></i>Choking Hazard: <span class="fw-normal text-dark">{{ ing.choking_hazard_note }}</span>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Allergen Banner on Card (if major allergen) -->
+                {% if ing.allergen_tag or ing.allergen_type %}
+                <div class="p-2 px-3 bg-warning bg-opacity-10 border border-warning rounded-3 small mb-2 d-flex align-items-center gap-2">
+                    <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                    <span class="text-dark"><strong>Major Allergen:</strong> {{ (ing.allergen_tag or ing.allergen_type)|capitalize }}. Wholesome food for non-allergic individuals; avoid if you have a diagnosed allergy.</span>
+                </div>
+                {% endif %}
+
+                <!-- Expandable "Read more" Details Drawer -->
+                <div class="mt-2 text-end">
+                    <button class="btn btn-link btn-sm text-decoration-none p-0 text-primary small" type="button" 
+                            data-bs-toggle="collapse" data-bs-target="#detailsCollapse_{{ loop.index }}" 
+                            aria-expanded="false" aria-controls="detailsCollapse_{{ loop.index }}">
+                        <i class="bi bi-chevron-down me-1"></i>Read full regulatory sources & details
+                    </button>
+                </div>
+
+                <div class="collapse mt-3" id="detailsCollapse_{{ loop.index }}">
+                    <div class="p-3 bg-light rounded-3 border">
+                        <div class="row g-3 small">
+                            <div class="col-md-6">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-gear-fill me-1 text-secondary"></i>Culinary Purpose / Function:</strong>
+                                <span class="text-secondary">{{ ing.why_used or ing.what_it_does or ing.purpose }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-basket-fill me-1 text-success"></i>Common Food Uses:</strong>
+                                <span class="text-secondary">{{ ing.common_uses or 'Home cooking, packaged savory snacks, and baked goods.' }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-calendar-heart text-success me-1"></i>Regular Consumption Note:</strong>
+                                <span class="text-secondary">{{ ing.regular_consumption_note }}</span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong class="text-dark d-block mb-1"><i class="bi bi-bookmark-check text-info me-1"></i>Authoritative Regulatory Sources:</strong>
+                                <span class="text-secondary">{{ ing.sources | join(', ') if ing.sources else 'FSSAI / Codex Alimentarius / ICMR-NIN' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 5. Navigation & User Actions Bar (Section 11) -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 text-center bg-white mt-4">
+        <h5 class="fw-bold text-dark mb-2">What would you like to do next?</h5>
+        <p class="text-secondary small mb-4">You can scan another food product, revisit your saved scan history, or print this analysis for your records.</p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+            <a href="{{ url_for('main.scan') }}" class="btn btn-success px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+                <i class="bi bi-camera-fill"></i>Scan Another Product
+            </a>
+            <a href="{{ url_for('main.history') }}" class="btn btn-outline-primary px-4 py-2 fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-clock-history"></i>View Scan History
+            </a>
+            <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary px-4 py-2 fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-house-door"></i>Back to Dashboard
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-dark px-4 py-2 fw-semibold d-flex align-items-center gap-2">
+                <i class="bi bi-printer"></i>Print Results
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}

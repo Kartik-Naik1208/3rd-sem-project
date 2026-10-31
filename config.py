@@ -35,19 +35,38 @@ try:
 except ImportError:
     _load_env_file(BASE_DIR / '.env')
 
+# Resolve database URL from environment or fallback to instance SQLite
+_raw_db_url = os.environ.get('DATABASE_URL')
+if _raw_db_url:
+    # Render and other providers often specify postgres:// which SQLAlchemy 1.4+ expects as postgresql://
+    if _raw_db_url.startswith('postgres://'):
+        _raw_db_url = _raw_db_url.replace('postgres://', 'postgresql://', 1)
+    _db_uri = _raw_db_url
+    if 'sqlite' in _raw_db_url:
+        _engine_options = {'connect_args': {'check_same_thread': False}}
+    else:
+        _engine_options = {}
+else:
+    _db_uri = 'sqlite:///' + (_instance_dir / 'ingredientiq.db').as_posix()
+    _engine_options = {'connect_args': {'check_same_thread': False}}
+
+
 class Config:
     """Base configuration with shared application settings."""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'ingredientiq-dev-secret-key-2026')
     
-    # SQLite Database URI — uses an absolute, forward-slash path so it resolves
-    # correctly regardless of the working directory the app is launched from.
-    SQLALCHEMY_DATABASE_URI = os.environ.get(
-        'DATABASE_URL',
-        'sqlite:///' + (_instance_dir / 'ingredientiq.db').as_posix()
-    )
+    # Database configuration
+    SQLALCHEMY_DATABASE_URI = _db_uri
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    # Allow SQLite connections from multiple threads (required by Flask dev server)
-    SQLALCHEMY_ENGINE_OPTIONS = {'connect_args': {'check_same_thread': False}}
+    SQLALCHEMY_ENGINE_OPTIONS = _engine_options
+    
+    # Session & Cookie Security
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
     
     # Upload configurations
     UPLOAD_FOLDER = os.environ.get(
@@ -59,6 +78,18 @@ class Config:
     
     # Optional external OCR engine configuration
     TESSERACT_CMD = os.environ.get('TESSERACT_CMD', '')
+
+    # Email / SMTP configuration (Gmail SMTP)
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', 'true').lower() in ('true', '1', 'yes')
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL', 'false').lower() in ('true', '1', 'yes')
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', '')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', '')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', os.environ.get('MAIL_USERNAME', 'noreply@ingredientiq.com'))
+
+    # Base application URL for generating password reset links (prevents Host header manipulation)
+    APP_BASE_URL = os.environ.get('APP_BASE_URL', 'https://ingredientiq-cymt.onrender.com').rstrip('/')
 
 
 class DevelopmentConfig(Config):
@@ -73,6 +104,7 @@ class TestingConfig(Config):
     DEBUG = True
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     WTF_CSRF_ENABLED = False
+    APP_BASE_URL = 'http://localhost:5000'
 
 
 class ProductionConfig(Config):

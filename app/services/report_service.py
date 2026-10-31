@@ -67,18 +67,25 @@ class ReportGenerator:
         elements.append(Spacer(1, 10))
 
         # Overall Status Card
-        summary = analysis_result.get('summary', 'Safe & Clean')
+        summary = analysis_result.get('summary', 'Clean & Safe')
         color_map = {
-            'Safe & Clean': colors.HexColor('#22c55e'),
-            'Moderate Caution': colors.HexColor('#eab308'),
-            'High Risk': colors.HexColor('#ef4444')
+            'Clean & Safe': colors.HexColor('#16a34a'),
+            'Safe & Clean': colors.HexColor('#16a34a'),
+            'Moderate Caution': colors.HexColor('#d97706'),
+            'High Risk': colors.HexColor('#dc2626'),
+            'Avoid': colors.HexColor('#dc2626')
         }
-        status_color = color_map.get(summary, colors.HexColor('#3b82f6'))
+        status_color = color_map.get(summary, colors.HexColor('#2563eb'))
+
+        child_stat = analysis_result.get('child_suitability', {}).get('status', 'No specific concern identified')
+        regular_stat = analysis_result.get('regular_consumption', {}).get('status', 'Generally reasonable based on available data')
 
         summary_table_data = [
-            [Paragraph("<b>Safety Assessment:</b>", styles['Normal']), Paragraph(f"<b><font color='{status_color.hexval()}'>{summary.upper()}</font></b>", styles['Normal'])],
+            [Paragraph("<b>Overall Verdict:</b>", styles['Normal']), Paragraph(f"<b><font color='{status_color.hexval()}'>{summary.upper()}</font></b>", styles['Normal'])],
+            [Paragraph("<b>Child Suitability:</b>", styles['Normal']), Paragraph(f"<b>{child_stat}</b>", styles['Normal'])],
+            [Paragraph("<b>Regular Consumption:</b>", styles['Normal']), Paragraph(f"<b>{regular_stat}</b>", styles['Normal'])],
             [Paragraph("<b>Allergens Detected:</b>", styles['Normal']), Paragraph(", ".join(analysis_result.get('flagged_allergens', [])) or "None Detected", styles['Normal'])],
-            [Paragraph("<b>Total Ingredients Identified:</b>", styles['Normal']), str(len(analysis_result.get('detected_ingredients', [])))]
+            [Paragraph("<b>Total Ingredients:</b>", styles['Normal']), str(len(analysis_result.get('detected_ingredients', [])))]
         ]
         summary_table = Table(summary_table_data, colWidths=[160, 370])
         summary_table.setStyle(TableStyle([
@@ -98,23 +105,37 @@ class ReportGenerator:
             table_rows.append([
                 ing.get('matched_name', ing.get('raw_token', '-')),
                 ing.get('e_number') or "-",
-                ing.get('category', 'Additive'),
-                ing.get('safety_rating', 'Safe'),
-                ing.get('allergen_type') or "None"
+                ing.get('category', 'General'),
+                ing.get('safety_level') or ing.get('safety_rating', 'Safe'),
+                ing.get('allergen_type') or ing.get('allergen_tag') or "None"
             ])
 
-        ing_table = Table(table_rows, colWidths=[150, 70, 110, 80, 120])
+        ing_table = Table(table_rows, colWidths=[160, 70, 110, 80, 110])
         ing_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#166534')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#e2e8f0')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#0f172a')),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 9),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
             ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#ffffff')),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#cbd5e1')),
-            ('FONTSIZE', (0, 0), (-1, -1), 9),
-            ('PADDING', (0, 0), (-1, -1), 5),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#e2e8f0')),
+            ('FONTSIZE', (0, 1), (-1, -1), 8),
+            ('PADDING', (0, 1), (-1, -1), 5),
         ]))
         elements.append(ing_table)
+        elements.append(Spacer(1, 15))
+
+        # Medical Disclaimer
+        disclaimer_style = ParagraphStyle(
+            'Disclaimer',
+            parent=styles['Normal'],
+            fontSize=8,
+            leading=11,
+            textColor=colors.HexColor('#64748b'),
+            spaceBefore=10
+        )
+        elements.append(Paragraph("<b>Disclaimer:</b> IngredientIQ provides automated nutritional transparency and educational guidance compiled from public scientific sources (EFSA, FDA, WHO, AAP). It does not constitute professional medical, pediatric, or clinical allergy advice.", disclaimer_style))
 
         doc.build(elements)
         buffer.seek(0)

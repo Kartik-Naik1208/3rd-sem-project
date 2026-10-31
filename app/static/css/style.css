@@ -138,3 +138,89 @@ body {
 .hover-white:hover {
     color: #fff !important;
 }
+
+/* Password Visibility Toggle Button */
+.password-toggle-btn {
+    border-color: #dee2e6 !important;
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.85rem;
+    cursor: pointer;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out;
+}
+
+.password-toggle-btn:hover {
+    background-color: #f1f5f9 !important;
+    color: #166534 !important;
+}
+
+.password-toggle-btn:focus {
+    outline: none;
+    box-shadow: none;
+    color: #166534 !important;
+}
+
+.password-toggle-btn:active {
+    background-color: #e2e8f0 !important;
+}
+
+.input-group:focus-within > .password-toggle-btn {
+    border-color: #86b7fe !important;
+}
+
+.input-group:focus-within > .input-group-text {
+    border-color: #86b7fe !important;
+}
+
+/* Typography & Utility Helpers */
+.fs-7 {
+    font-size: 0.8125rem !important;
+}
+
+.fs-8 {
+    font-size: 0.725rem !important;
+}
+
+.fs-9 {
+    font-size: 0.65rem !important;
+}
+
+.ingredient-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.ingredient-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Print Stylesheet for Scan Results */
+@media print {
+    nav, footer, .no-print, .btn, #ingredientSearchInput, .filter-pills, .sticky-top {
+        display: none !important;
+    }
+    body {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        font-size: 11pt;
+    }
+    .container {
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    .card {
+        border: 1px solid #d1d5db !important;
+        box-shadow: none !important;
+        page-break-inside: avoid;
+        margin-bottom: 1rem !important;
+    }
+    .collapse {
+        display: block !important;
+        height: auto !important;
+        visibility: visible !important;
+    }
+}

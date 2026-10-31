@@ -12,10 +12,19 @@
                         <i class="bi bi-person-plus fs-2"></i>
                     </div>
                     <h3 class="fw-bold mb-1">Create Account</h3>
-                    <p class="text-secondary small">Join IngredientIQ to track your scans and dietary preferences.</p>
+                    <p class="text-secondary small">Join IngredientIQ to track your scans, dietary preferences, and child safety evaluations.</p>
                 </div>
 
-                <form method="POST" action="{{ url_for('auth.register') }}">
+                {% if pending_scan_name %}
+                <div class="alert alert-info d-flex align-items-center gap-2 rounded-3 mb-4 shadow-sm" role="alert">
+                    <i class="bi bi-shield-check fs-4 text-info"></i>
+                    <div class="small">
+                        <strong>Scan Analysis Ready!</strong> Create your account below to immediately view the results for <strong>{{ pending_scan_name }}</strong>.
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('auth.register', next=request.args.get('next')) }}">
                     <div class="mb-3">
                         <label for="username" class="form-label fw-semibold">Username</label>
                         <div class="input-group">
@@ -36,7 +45,10 @@
                         <label for="password" class="form-label fw-semibold">Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-secondary"></i></span>
-                            <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="Create password" required>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="password" name="password" placeholder="Create password" required autocomplete="new-password">
+                            <button class="btn btn-light border border-start-0 text-secondary password-toggle-btn" type="button" id="toggleRegisterPasswordBtn" data-target="password" aria-label="Show password" title="Show password" aria-pressed="false">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -44,7 +56,10 @@
                         <label for="confirm_password" class="form-label fw-semibold">Confirm Password</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-shield-lock text-secondary"></i></span>
-                            <input type="password" class="form-control border-start-0" id="confirm_password" name="confirm_password" placeholder="Repeat password" required>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="confirm_password" name="confirm_password" placeholder="Repeat password" required autocomplete="new-password">
+                            <button class="btn btn-light border border-start-0 text-secondary password-toggle-btn" type="button" id="toggleConfirmPasswordBtn" data-target="confirm_password" aria-label="Show confirm password" title="Show confirm password" aria-pressed="false">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -54,7 +69,7 @@
                 </form>
 
                 <div class="text-center mt-4 pt-3 border-top small text-secondary">
-                    Already registered? <a href="{{ url_for('auth.login') }}" class="text-success fw-semibold text-decoration-none">Log in</a>
+                    Already registered? <a href="{{ url_for('auth.login', next=request.args.get('next')) }}" class="text-success fw-semibold text-decoration-none">Log in</a>
                 </div>
             </div>
         </div>

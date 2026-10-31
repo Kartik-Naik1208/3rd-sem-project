@@ -140,4 +140,119 @@ document.addEventListener('DOMContentLoaded', () => {
             return true;
         });
     }
+
+    // 5. Password Visibility Toggle Handlers (Login & Register Pages)
+    const passwordToggleButtons = document.querySelectorAll('.password-toggle-btn');
+    passwordToggleButtons.forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const targetId = btn.getAttribute('data-target');
+            let targetInput = targetId ? document.getElementById(targetId) : null;
+            if (!targetInput) {
+                const group = btn.closest('.input-group');
+                if (group) {
+                    targetInput = group.querySelector('input');
+                }
+            }
+
+            if (!targetInput) return;
+
+            const isCurrentlyPassword = targetInput.type === 'password';
+            targetInput.type = isCurrentlyPassword ? 'text' : 'password';
+
+            const icon = btn.querySelector('i');
+            if (icon) {
+                if (isCurrentlyPassword) {
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                } else {
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                }
+            }
+
+            const isConfirm = targetInput.id === 'confirm_password';
+            const actionWord = isCurrentlyPassword ? 'Hide' : 'Show';
+            const fieldName = isConfirm ? 'confirm password' : 'password';
+            const labelText = `${actionWord} ${fieldName}`;
+
+            btn.setAttribute('aria-label', labelText);
+            btn.setAttribute('title', labelText);
+            btn.setAttribute('aria-pressed', isCurrentlyPassword ? 'true' : 'false');
+        });
+    });
+
+    // 6. Live Search and Filter for "Ingredients Found in This Product"
+    const ingredientSearchInput = document.getElementById('ingredientSearchInput');
+    const ingredientRows = document.querySelectorAll('.ingredient-entry-item');
+    const ingredientCountBadge = document.getElementById('ingredientSearchCount');
+    const noResultsAlert = document.getElementById('noIngredientResults');
+    const filterPills = document.querySelectorAll('.ingredient-filter-pill');
+
+    let currentFilterStatus = 'all';
+
+    function applyIngredientFilter() {
+        const query = ingredientSearchInput ? ingredientSearchInput.value.toLowerCase().trim() : '';
+        let visibleCount = 0;
+
+        ingredientRows.forEach((row) => {
+            const rowText = (row.getAttribute('data-search-text') || row.textContent).toLowerCase();
+            const rowStatus = (row.getAttribute('data-status-filter') || '').toLowerCase();
+
+            const matchesQuery = !query || rowText.includes(query);
+            let matchesStatus = (currentFilterStatus === 'all');
+            if (!matchesStatus) {
+                if (currentFilterStatus === 'no specific concern identified' || currentFilterStatus === 'safe') {
+                    matchesStatus = (rowStatus === 'no specific concern identified' || rowStatus === 'safe');
+                } else if (currentFilterStatus === 'caution') {
+                    matchesStatus = (rowStatus === 'caution' || rowStatus === 'use caution');
+                } else if (currentFilterStatus === 'potential concern' || currentFilterStatus === 'concern') {
+                    matchesStatus = (rowStatus === 'potential concern' || rowStatus === 'harmful' || rowStatus === 'concern');
+                } else if (currentFilterStatus === 'insufficient information' || currentFilterStatus === 'unverified') {
+                    matchesStatus = (rowStatus === 'insufficient information' || rowStatus === 'unverified' || rowStatus === 'ocr issue');
+                } else {
+                    matchesStatus = (rowStatus === currentFilterStatus);
+                }
+            }
+
+            if (matchesQuery && matchesStatus) {
+                row.classList.remove('d-none');
+                visibleCount++;
+            } else {
+                row.classList.add('d-none');
+            }
+        });
+
+        if (ingredientCountBadge) {
+            ingredientCountBadge.textContent = visibleCount;
+        }
+        if (noResultsAlert) {
+            if (visibleCount === 0) {
+                noResultsAlert.classList.remove('d-none');
+            } else {
+                noResultsAlert.classList.add('d-none');
+            }
+        }
+    }
+
+    if (ingredientSearchInput) {
+        ingredientSearchInput.addEventListener('input', applyIngredientFilter);
+    }
+
+    filterPills.forEach((pill) => {
+        pill.addEventListener('click', (e) => {
+            e.preventDefault();
+            filterPills.forEach((p) => {
+                p.classList.remove('active');
+                p.classList.remove('btn-dark');
+                p.classList.add('btn-outline-secondary');
+            });
+
+            pill.classList.remove('btn-outline-secondary');
+            pill.classList.add('active', 'btn-dark');
+
+            currentFilterStatus = pill.getAttribute('data-filter') || 'all';
+            applyIngredientFilter();
+        });
+    });
 });

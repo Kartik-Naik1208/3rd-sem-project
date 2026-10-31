@@ -1,5 +1,6 @@
 import unittest
 from app import create_app, db
+from app.models.user import User
 from app.services.analyzer_service import IngredientAnalyzer
 from app.models.ingredient import Ingredient, Scan
 from database import load_ingredients_from_csv
@@ -20,6 +21,15 @@ class TestBasicWorkflow(unittest.TestCase):
         db.drop_all()
         self.app_context.pop()
 
+    def login(self, username='testuser', password='password123'):
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            user = User(username=username, email=f"{username}@example.com")
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+        return self.client.post('/auth/login', data={'username': username, 'password': password}, follow_redirects=True)
+
     def test_app_creation(self):
         """Verify application initializes with testing config."""
         self.assertIsNotNone(self.app)
@@ -35,11 +45,20 @@ class TestBasicWorkflow(unittest.TestCase):
         self.assertIn('Scan Ingredients', html)
 
     def test_navbar_links(self):
-        """Verify all navbar endpoints load with HTTP 200."""
-        endpoints = ['/', '/scan', '/history', '/search', '/admin', '/auth/login', '/auth/register']
-        for ep in endpoints:
+        """Verify navbar endpoints for guest and authenticated user."""
+        public_endpoints = ['/', '/scan', '/search', '/auth/login', '/auth/register']
+        for ep in public_endpoints:
             resp = self.client.get(ep)
             self.assertEqual(resp.status_code, 200, f"Endpoint {ep} returned status {resp.status_code}")
+
+        # /history requires login (302 redirect for guest)
+        guest_hist = self.client.get('/history')
+        self.assertEqual(guest_hist.status_code, 302)
+
+        # Authenticated user can access /history
+        self.login()
+        auth_hist = self.client.get('/history')
+        self.assertEqual(auth_hist.status_code, 200)
 
     def test_404_error_page(self):
         """Verify custom 404 handler returns 404 status and error message."""
@@ -64,7 +83,9 @@ class TestBasicWorkflow(unittest.TestCase):
         self.assertTrue(any('soy' in a for a in allergens))
 
     def test_scan_post_text(self):
-        """Verify POST request to /scan performs analysis on raw text input."""
+        """Verify POST request to /scan performs analysis on raw text input for authenticated user."""
+        self.login()
+        load_ingredients_from_csv(app=self.app)
         response = self.client.post('/scan', data={
             'product_name': 'Test Snack',
             'raw_text': 'Wheat Flour, Citric Acid, Soy Lecithin'
@@ -72,6 +93,8 @@ class TestBasicWorkflow(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         html = response.get_data(as_text=True)
+        self.assertIn('Test Snack', html)
+        self.assertIn('Identified Ingredients Breakdown', html)
         self.assertIn('Test Snack', html)
         self.assertIn('Identified Ingredients Breakdown', html)
 
@@ -111,6 +134,7 @@ class TestBasicWorkflow(unittest.TestCase):
 
     def test_scan_history_and_view_result(self):
         """Verify saving scan in SQLite scans table and retrieving it on history and view_scan."""
+        self.login()
         load_ingredients_from_csv(app=self.app)
 
         resp = self.client.post('/scan', data={
@@ -151,6 +175,7 @@ class TestBasicWorkflow(unittest.TestCase):
 
     def test_scan_allergy_avoid_verdict_persisted(self):
         """Verify allergy/diet override sets verdict to Avoid and persists in scans table."""
+        self.login()
         load_ingredients_from_csv(app=self.app)
 
         resp = self.client.post('/scan', data={

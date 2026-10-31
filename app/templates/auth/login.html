@@ -12,10 +12,19 @@
                         <i class="bi bi-person-circle fs-2"></i>
                     </div>
                     <h3 class="fw-bold mb-1">Welcome Back</h3>
-                    <p class="text-secondary small">Log in to view your scan history and personalized allergen alerts.</p>
+                    <p class="text-secondary small">Log in to view your scan results, history, and child safety evaluations.</p>
                 </div>
 
-                <form method="POST" action="{{ url_for('auth.login') }}">
+                {% if pending_scan_name %}
+                <div class="alert alert-info d-flex align-items-center gap-2 rounded-3 mb-4 shadow-sm" role="alert">
+                    <i class="bi bi-shield-lock-fill fs-4 text-info"></i>
+                    <div class="small">
+                        <strong>Scan Analysis Ready!</strong> Log in to unlock your complete ingredient analysis, child suitability, and regular consumption reports for <strong>{{ pending_scan_name }}</strong>.
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="POST" action="{{ url_for('auth.login', next=request.args.get('next')) }}">
                     <div class="mb-3">
                         <label for="username" class="form-label fw-semibold">Username or Email</label>
                         <div class="input-group">
@@ -25,10 +34,16 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="password" class="form-label fw-semibold">Password</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label for="password" class="form-label fw-semibold mb-0">Password</label>
+                            <a href="{{ url_for('auth.forgot_password') }}" class="small text-success text-decoration-none fw-semibold">Forgot Password?</a>
+                        </div>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-secondary"></i></span>
-                            <input type="password" class="form-control border-start-0" id="password" name="password" placeholder="••••••••" required>
+                            <input type="password" class="form-control border-start-0 border-end-0" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                            <button class="btn btn-light border border-start-0 text-secondary password-toggle-btn" type="button" id="toggleLoginPasswordBtn" data-target="password" aria-label="Show password" title="Show password" aria-pressed="false">
+                                <i class="bi bi-eye"></i>
+                            </button>
                         </div>
                     </div>
 
@@ -38,7 +53,7 @@
                 </form>
 
                 <div class="text-center mt-4 pt-3 border-top small text-secondary">
-                    Don't have an account yet? <a href="{{ url_for('auth.register') }}" class="text-success fw-semibold text-decoration-none">Sign up</a>
+                    Don't have an account yet? <a href="{{ url_for('auth.register', next=request.args.get('next')) }}" class="text-success fw-semibold text-decoration-none">Create Account</a>
                 </div>
             </div>
         </div>

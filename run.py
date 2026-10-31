@@ -5,16 +5,19 @@ from app import create_app, db
 env_name = os.environ.get('FLASK_ENV', 'development')
 app = create_app(env_name)
 
-if __name__ == '__main__':
-    from database import create_tables, load_ingredients_from_csv
-    with app.app_context():
-        # Ensure database tables exist and schema is up to date
+# Ensure database tables and schema updates are applied on server startup (both local and Render Gunicorn)
+with app.app_context():
+    from database import create_tables, load_all_ingredients
+    try:
         create_tables(app)
-        # Seed initial ingredients if database is empty
         from app.models.ingredient import Ingredient
-        if Ingredient.query.count() == 0:
-            load_ingredients_from_csv(app=app)
-    
+        if Ingredient.query.count() < 100:
+            load_all_ingredients(app=app)
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Startup table verification note: {e}")
+
+if __name__ == '__main__':
     # Run development server
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_DEBUG', '1').lower() in ('1', 'true', 'yes')

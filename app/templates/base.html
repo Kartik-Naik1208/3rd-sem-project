@@ -50,21 +50,25 @@
                             <i class="bi bi-camera me-1"></i>Scan
                         </a>
                     </li>
+                    {% if current_user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.history' %}active{% endif %}" href="{{ url_for('main.history') }}">
                             <i class="bi bi-clock-history me-1"></i>History
                         </a>
                     </li>
+                    {% endif %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.search' %}active{% endif %}" href="{{ url_for('main.search') }}">
                             <i class="bi bi-search me-1"></i>Search
                         </a>
                     </li>
+                    {% if current_user.is_authenticated and (current_user.is_admin or current_user.username == 'admin') %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'main.admin' %}active{% endif %}" href="{{ url_for('main.admin') }}">
                             <i class="bi bi-gear me-1"></i>Admin
                         </a>
                     </li>
+                    {% endif %}
                 </ul>
 
                 <!-- Right Side: Login / Register & User State -->
@@ -73,7 +77,7 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-1 text-light" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <i class="bi bi-person-circle fs-5 text-success"></i>
-                                <span>{{ current_user.username }}</span>
+                                <span id="currentUsername">{{ current_user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
                                 <li><a class="dropdown-item" href="{{ url_for('main.history') }}"><i class="bi bi-clock-history me-2"></i>My Scans</a></li>
@@ -139,7 +143,9 @@
                         <a href="{{ url_for('main.index') }}" class="text-secondary text-decoration-none hover-white">Home</a>
                         <a href="{{ url_for('main.scan') }}" class="text-secondary text-decoration-none hover-white">Upload</a>
                         <a href="{{ url_for('main.search') }}" class="text-secondary text-decoration-none hover-white">Search</a>
+                        {% if current_user.is_authenticated %}
                         <a href="{{ url_for('main.history') }}" class="text-secondary text-decoration-none hover-white">History</a>
+                        {% endif %}
                     </nav>
                     <div class="text-secondary small">
                         &copy; {{ current_year }} Food Ingredient Safety Scanner.
@@ -153,6 +159,14 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Bfcache handling: when user clicks Back/Forward after logging out, force reload from server
+        window.addEventListener('pageshow', function (event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
+    </script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>

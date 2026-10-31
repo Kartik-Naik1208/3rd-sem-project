@@ -8,7 +8,7 @@ from config import config_by_name
 db = SQLAlchemy()
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
-login_manager.login_message = 'Please log in to access this feature.'
+login_manager.login_message = 'Please log in to continue.'
 login_manager.login_message_category = 'warning'
 
 
@@ -20,6 +20,10 @@ def create_app(config_name=None):
     app = Flask(__name__)
     config_obj = config_by_name.get(config_name, config_by_name['default'])
     app.config.from_object(config_obj)
+
+    # Allow runtime environment variable overrides (12-factor app)
+    if os.environ.get('SECRET_KEY'):
+        app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
     if config_name == 'production' and not app.config.get('SECRET_KEY'):
         import warnings
@@ -59,6 +63,22 @@ def create_app(config_name=None):
             'app_version': '1.0.0',
             'current_year': datetime.now(timezone.utc).year
         }
+
+    # Enforce strict Cache-Control headers on sensitive and authenticated requests
+    @app.after_request
+    def set_cache_and_security_headers(response):
+        """
+        Enforce strict Cache-Control headers on sensitive, authenticated, and user-specific pages.
+        Ensures browser Back button and history navigation cannot reveal private account info or cached pages.
+        """
+        from flask import request
+        from flask_login import current_user
+        sensitive_prefixes = ('/history', '/scan', '/admin', '/dashboard', '/account', '/profile', '/auth', '/export-report', '/uploads')
+        if current_user.is_authenticated or any(request.path.startswith(prefix) for prefix in sensitive_prefixes):
+            response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0, private'
+            response.headers['Pragma'] = 'no-cache'
+            response.headers['Expires'] = '0'
+        return response
 
     # Custom HTTP error handlers
     @app.errorhandler(403)

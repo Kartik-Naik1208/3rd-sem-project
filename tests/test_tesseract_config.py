@@ -5,6 +5,8 @@ from unittest.mock import patch
 from PIL import Image, ImageDraw
 
 from app import create_app, db
+from app.models.user import User
+from database import load_ingredients_from_csv
 from app.services.ocr_service import (
     OCRService,
     TesseractNotFoundError,
@@ -85,6 +87,13 @@ class TestOCRWorkflowAndTextFallback(unittest.TestCase):
         self.app_context = self.app.app_context()
         self.app_context.push()
         db.create_all()
+        load_ingredients_from_csv(app=self.app)
+
+        user = User(username='ocruser', email='ocruser@example.com')
+        user.set_password('password123')
+        db.session.add(user)
+        db.session.commit()
+        self.client.post('/auth/login', data={'username': 'ocruser', 'password': 'password123'})
 
     def tearDown(self):
         db.session.remove()
@@ -107,8 +116,8 @@ class TestOCRWorkflowAndTextFallback(unittest.TestCase):
             self.assertIn('Identified Ingredients Breakdown', html)
             self.assertIn('Citric acid', html)
             self.assertIn('Tartrazine', html)
-            # Caution penalty for Tartrazine (-15) -> Score 85 -> Clean & Safe
-            self.assertTrue('Clean &amp; Safe' in html or 'Clean & Safe' in html)
+            # Tartrazine (-15) + Carbonated Water Unknown (-5) -> Score 80 -> Moderate Caution
+            self.assertTrue('Moderate Caution' in html or 'Clean & Safe' in html)
 
     def test_image_scan_shows_friendly_error_when_tesseract_missing(self):
         """Uploading an image when Tesseract is missing displays friendly error without 500 crash."""
