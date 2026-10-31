@@ -17,6 +17,22 @@ with app.app_context():
         import logging
         logging.getLogger(__name__).warning(f"Startup table verification note: {e}")
 
+    # Verify OCR engine status on startup (Render Gunicorn / local dev)
+    try:
+        import logging
+        from app.services.ocr_service import check_ocr_health
+        ocr_diag = check_ocr_health(app.config.get('TESSERACT_CMD'))
+        logger = logging.getLogger("ingredientiq.startup")
+        if ocr_diag.get('is_available'):
+            langs = ", ".join(ocr_diag.get('installed_languages', [])) or 'eng'
+            logger.info(
+                f"OCR Engine Verified: Tesseract v{ocr_diag.get('version')} at {ocr_diag.get('executable_path')} [languages: {langs}]"
+            )
+        else:
+            logger.warning(f"OCR Engine Notice: {ocr_diag.get('message')}")
+    except Exception:
+        pass
+
 if __name__ == '__main__':
     # Run development server
     port = int(os.environ.get('PORT', 5000))

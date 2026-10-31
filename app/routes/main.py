@@ -491,9 +491,17 @@ def admin():
     except Exception:
         pass
 
+    from app.services.ocr_service import check_ocr_health
+    ocr_diag = check_ocr_health(current_app.config.get('TESSERACT_CMD'))
+    if ocr_diag.get('is_available'):
+        langs_str = ", ".join(ocr_diag.get('installed_languages', [])) or "eng"
+        ocr_desc = f"Ready (v{ocr_diag.get('version', 'unknown')}, languages: {langs_str})"
+    else:
+        ocr_desc = f"Offline: {ocr_diag.get('message', 'Tesseract not detected')}"
+
     system_status = {
-        'database': 'Connected (SQLite)',
-        'ocr_engine': 'OpenCV + Tesseract OCR Ready' if OCRService.is_tesseract_available(current_app.config.get('TESSERACT_CMD')) else 'Tesseract Not Detected (Text Scanning Available)',
+        'database': 'Connected (' + ('PostgreSQL' if 'postgres' in current_app.config.get('SQLALCHEMY_DATABASE_URI', '').lower() else 'SQLite') + ')',
+        'ocr_engine': f"OpenCV + Tesseract OCR {ocr_desc}",
         'fuzzy_matcher': 'RapidFuzz Active',
         'pdf_reporter': 'ReportLab Ready',
         'knowledge_base': 'Comprehensive Food & Additive Knowledge Base Active'
@@ -614,3 +622,40 @@ def forgot_password_alias():
 def reset_password_alias(token):
     """Top-level redirect alias to auth.reset_password."""
     return redirect(url_for('auth.reset_password', token=token))
+
+
+@main_bp.route('/health')
+def health_check():
+    """Diagnostic health check endpoint for monitoring, Render probes, and OCR verification."""
+    from app.services.ocr_service import check_ocr_health
+    from app import db
+    from flask import jsonify
+
+    db_ok = True
+    db_msg = "Connected"
+    try:
+        db.session.execute(db.text("SELECT 1"))
+    except Exception as e:
+        db_ok = False
+        db_msg = f"Database probe failed: {e}"
+
+    ocr_health = check_ocr_health(current_app.config.get('TESSERACT_CMD'))
+    is_overall_healthy = db_ok and ocr_health.get('is_available', False)
+
+    return jsonify({
+        'status': 'healthy' if is_overall_healthy else ('degraded' if db_ok else 'unhealthy'),
+        'service': 'IngredientIQ',
+        'database': {
+            'status': 'healthy' if db_ok else 'unhealthy',
+            'engine': 'PostgreSQL' if 'postgres' in current_app.config.get('SQLALCHEMY_DATABASE_URI', '').lower() else 'SQLite',
+            'message': db_msg
+        },
+        'ocr': {
+            'status': ocr_health.get('status'),
+            'is_available': ocr_health.get('is_available'),
+            'version': ocr_health.get('version'),
+            'installed_languages': ocr_health.get('installed_languages'),
+            'optional_languages': ocr_health.get('available_optional_languages'),
+            'message': ocr_health.get('message')
+        }
+    }), 200

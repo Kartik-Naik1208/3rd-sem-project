@@ -183,6 +183,50 @@ class TestOCRWorkflowAndTextFallback(unittest.TestCase):
             html = response.get_data(as_text=True)
             self.assertIn('Image successfully processed via OCR', html)
 
+    def test_check_ocr_health_diagnostics_structure(self):
+        """check_ocr_health returns required diagnostic keys."""
+        from app.services.ocr_service import check_ocr_health
+        report = check_ocr_health()
+        self.assertIn('status', report)
+        self.assertIn('is_available', report)
+        self.assertIn('version', report)
+        self.assertIn('installed_languages', report)
+        self.assertIn('missing_required_languages', report)
+        self.assertIn('available_optional_languages', report)
+        self.assertIn('message', report)
+
+    def test_check_ocr_health_handles_missing_binary_gracefully(self):
+        """check_ocr_health gracefully reports error when binary is missing without crashing."""
+        from app.services.ocr_service import check_ocr_health
+        with patch('app.services.ocr_service.find_tesseract_cmd', side_effect=TesseractNotFoundError("binary missing")):
+            report = check_ocr_health()
+            self.assertFalse(report['is_available'])
+            self.assertEqual(report['status'], 'error')
+            self.assertIn("binary missing", report['message'])
+
+    def test_check_ocr_health_missing_optional_language_does_not_break_health(self):
+        """An optional language being absent does not mark OCR as broken."""
+        from app.services.ocr_service import check_ocr_health
+        with patch('app.services.ocr_service.find_tesseract_cmd', return_value="/usr/bin/tesseract"):
+            with patch('pytesseract.get_tesseract_version', return_value="5.3.0"):
+                with patch('app.services.ocr_service.get_installed_languages', return_value=['eng', 'osd']):
+                    with patch('pytesseract.image_to_string', return_value="test"):
+                        report = check_ocr_health(optional_langs=['hin'])
+                        self.assertTrue(report['is_available'])
+                        self.assertEqual(report['status'], 'healthy')
+                        self.assertIn('hin', report['missing_optional_languages'])
+
+    def test_health_endpoint_response(self):
+        """The /health endpoint returns HTTP 200 with JSON status for monitoring."""
+        response = self.client.get('/health')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.is_json)
+        data = response.get_json()
+        self.assertIn('status', data)
+        self.assertIn('database', data)
+        self.assertIn('ocr', data)
+        self.assertIn('is_available', data['ocr'])
+
 
 if __name__ == '__main__':
     unittest.main()
